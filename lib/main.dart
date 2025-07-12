@@ -3,71 +3,74 @@ import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 
 // 数据模型类
+// 数据模型类
 class Store {
   final String id;
   final String name;
   final int floor;
   final String type;
+  final Point? location; // 添加位置信息
 
   Store({
     required this.id,
     required this.name,
     required this.floor,
     required this.type,
+    this.location,
   });
 }
 
 class StoreData {
   static List<Store> stores = [
-    Store(id: "S1", name: "蔚来汽车", floor: 1, type: "Store"),
-    Store(id: "S2", name: "HARMAY", floor: 1, type: "Store"),
-    Store(id: "S3", name: "GUCCI beauty", floor: 1, type: "Store"),
-    Store(id: "S4", name: "ZARA HOME", floor: 1, type: "Store"),
-    Store(id: "S5", name: "CHANEL", floor: 1, type: "Store"),
-    Store(id: "S6", name: "Jmoon极萌/ulike", floor: 1, type: "Store"),
-    Store(id: "S7", name: "LANCASTER", floor: 1, type: "Store"),
-    Store(id: "S8", name: "", floor: 1, type: "Store"),
-    Store(id: "S9", name: "COACH", floor: 1, type: "Store"),
-    Store(id: "S10", name: "Abercrombie&Fitch", floor: 1, type: "Store"),
-    Store(id: "S11", name: "Ciao Panificio by B&C", floor: 1, type: "Store"),
-    Store(id: "S12", name: "", floor: 1, type: "Store"),
-    Store(id: "S13", name: "", floor: 1, type: "Store"),
-    Store(id: "S14", name: "Venchi", floor: 1, type: "Store"),
-    Store(id: "S15", name: "SHAKE SHACK", floor: 1, type: "Store"),
-    Store(id: "S16", name: "SHAKE SHACK", floor: 1, type: "Store"),
-    Store(id: "S17", name: "SEPHORA", floor: 1, type: "Store"),
-    Store(id: "S18", name: "HOKA", floor: 1, type: "Store"),
-    Store(id: "S19", name: "gaga鲜语", floor: 1, type: "Store"),
-    Store(id: "S20", name: "星巴克臻选", floor: 1, type: "Store"),
-    Store(id: "S21", name: "KLATTER MUSEN", floor: 1, type: "Store"),
-    Store(id: "S22", name: "HELLY HANSEN", floor: 1, type: "Store"),
-    Store(id: "S23", name: "Massimo Dutti", floor: 1, type: "Store"),
-    Store(id: "S24", name: "i.t(含Fred Perry)", floor: 1, type: "Store"),
-    Store(id: "S25", name: "APM Monaco", floor: 1, type: "Store"),
-    Store(id: "S26", name: "Mardi Mercredi", floor: 1, type: "Store"),
-    Store(id: "S27", name: "Mardi Mercredi", floor: 1, type: "Store"),
-    Store(id: "S28", name: "DESCENTE迪桑特", floor: 1, type: "Store"),
-    Store(id: "S29", name: "DESCENTE迪桑特", floor: 1, type: "Store"),
-    Store(id: "S30", name: "YSL", floor: 1, type: "Store"),
-    Store(id: "S31", name: "Shu uemura", floor: 1, type: "Store"),
-    Store(id: "S32", name: "DESCENTE迪桑特", floor: 1, type: "Store"),
-    Store(id: "S33", name: "GIVENCHY纪梵希", floor: 1, type: "Store"),
-    Store(id: "S34", name: "ON昂跑", floor: 1, type: "Store"),
-    Store(id: "S35", name: "LANCOME", floor: 1, type: "Store"),
-    Store(id: "S36", name: "ON昂跑", floor: 1, type: "Store"),
-    Store(id: "S37", name: "悦木之源ORIGINS", floor: 1, type: "Store"),
-    Store(id: "S38", name: "MAC", floor: 1, type: "Store"),
-    Store(id: "S39", name: "AAPE", floor: 1, type: "Store"),
-    Store(id: "S40", name: "GROTTO", floor: 1, type: "Store"),
-    Store(id: "S41", name: "DIOR", floor: 1, type: "Store"),
-    Store(id: "S42", name: "DIOR", floor: 1, type: "Store"),
-    Store(id: "S43", name: "娇韵诗CLARINS", floor: 1, type: "Store"),
-    Store(id: "S44", name: "Guerlain娇兰", floor: 1, type: "Store"),
-    Store(id: "S45", name: "SMFK", floor: 1, type: "Store"),
-    Store(id: "S46", name: "Estée Lauder雅诗兰黛", floor: 1, type: "Store"),
-    Store(id: "S47", name: "JO MALONE", floor: 1, type: "Store"),
-    Store(id: "S48", name: "lululemon", floor: 1, type: "Store"),
-    Store(id: "S49", name: "Chloé", floor: 1, type: "Store"),
+    Store(id: "S1", name: "蔚来汽车", floor: 1, type: "Store", location: Point(121.065, -239.109)),
+    Store(id: "S2", name: "HARMAY", floor: 1, type: "Store", location: Point(168.456, -138.683)),
+    Store(id: "S3", name: "GUCCI beauty", floor: 1, type: "Store", location: Point(298.394, -123.513)),
+    Store(id: "S4", name: "ZARA HOME", floor: 1, type: "Store", location: Point(375.981, -77.893)),
+    Store(id: "S5", name: "CHANEL", floor: 1, type: "Store", location: Point(437.651, -108.326)),
+    Store(id: "S6", name: "Jmoon极萌/ulike", floor: 1, type: "Store", location: Point(495.194, -104.225)),
+    Store(id: "S7", name: "LANCASTER", floor: 1, type: "Store", location: Point(525.335, -90.373)),
+    Store(id: "S8", name: "", floor: 1, type: "Store", location: Point(563.557, -92.368)),
+    Store(id: "S9", name: "COACH", floor: 1, type: "Store", location: Point(588.835, -130.926)),
+    Store(id: "S10", name: "Abercrombie&Fitch", floor: 1, type: "Store", location: Point(736.563, -119.098)),
+    Store(id: "S11", name: "Ciao Panificio by B&C", floor: 1, type: "Store", location: Point(806.176, -159.914)),
+    Store(id: "S12", name: "", floor: 1, type: "Store", location: Point(847.077, -160.340)),
+    Store(id: "S13", name: "", floor: 1, type: "Store", location: Point(799.512, -278.997)),
+    Store(id: "S14", name: "Venchi", floor: 1, type: "Store", location: Point(801.530, -245.441)),
+    Store(id: "S15", name: "SHAKE SHACK", floor: 1, type: "Store", location: Point(844.326, -378.062)),
+    Store(id: "S16", name: "SHAKE SHACK", floor: 1, type: "Store", location: Point(841.540, -330.041)),
+    Store(id: "S17", name: "SEPHORA", floor: 1, type: "Store", location: Point(698.965, -339.268)),
+    Store(id: "S18", name: "HOKA", floor: 1, type: "Store", location: Point(753.616, -334.220)),
+    Store(id: "S19", name: "gaga鲜语", floor: 1, type: "Store", location: Point(764.888, -394.968)),
+    Store(id: "S20", name: "星巴克臻选", floor: 1, type: "Store", location: Point(527.830, -373.583)),
+    Store(id: "S21", name: "KLATTER MUSEN", floor: 1, type: "Store", location: Point(573.377, -370.001)),
+    Store(id: "S22", name: "HELLY HANSEN", floor: 1, type: "Store", location: Point(622.073, -346.291)),
+    Store(id: "S23", name: "Massimo Dutti", floor: 1, type: "Store", location: Point(449.351, -380.205)),
+    Store(id: "S24", name: "i.t(含Fred Perry)", floor: 1, type: "Store", location: Point(219.112, -341.495)),
+    Store(id: "S25", name: "APM Monaco", floor: 1, type: "Store", location: Point(296.019, -361.610)),
+    Store(id: "S26", name: "Mardi Mercredi", floor: 1, type: "Store", location: Point(329.641, -367.177)),
+    Store(id: "S27", name: "Mardi Mercredi", floor: 1, type: "Store", location: Point(360.432, -371.425)),
+    Store(id: "S28", name: "DESCENTE迪桑特", floor: 1, type: "Store", location: Point(543.081, -298.102)),
+    Store(id: "S29", name: "DESCENTE迪桑特", floor: 1, type: "Store", location: Point(542.116, -256.927)),
+    Store(id: "S30", name: "YSL", floor: 1, type: "Store", location: Point(539.876, -213.241)),
+    Store(id: "S31", name: "Shu uemura", floor: 1, type: "Store", location: Point(561.698, -168.956)),
+    Store(id: "S32", name: "DESCENTE迪桑特", floor: 1, type: "Store", location: Point(579.3, -286.9)), 
+    Store(id: "S33", name: "GIVENCHY纪梵希", floor: 1, type: "Store", location: Point(579.9, -225.8)), 
+    Store(id: "S34", name: "ON昂跑", floor: 1, type: "Store", location: Point(613.9, -281.6)), 
+    Store(id: "S35", name: "LANCOME", floor: 1, type: "Store", location: Point(613.9, -230.6)), 
+    Store(id: "S36", name: "ON昂跑", floor: 1, type: "Store", location: Point(658.2, -274.5)),
+    Store(id: "S37", name: "悦木之源ORIGINS", floor: 1, type: "Store", location: Point(643.7, -242.3)), 
+    Store(id: "S38", name: "MAC", floor: 1, type: "Store", location: Point(671.1, -242.3)), 
+    Store(id: "S39", name: "AAPE", floor: 1, type: "Store", location: Point(312.0, -278.5)), 
+    Store(id: "S40", name: "GROTTO", floor: 1, type: "Store", location: Point(373.1, -279.1)), 
+    Store(id: "S41", name: "DIOR", floor: 1, type: "Store", location: Point(282.3, -240.1)), 
+    Store(id: "S42", name: "DIOR", floor: 1, type: "Store", location: Point(309.2, -230.1)), 
+    Store(id: "S43", name: "娇韵诗CLARINS", floor: 1, type: "Store", location: Point(339.1, -228.5)), 
+    Store(id: "S44", name: "Guerlain娇兰", floor: 1, type: "Store", location: Point(356.2, -228.5)), 
+    Store(id: "S45", name: "SMFK", floor: 1, type: "Store", location: Point(409.940, -290.196)),
+    Store(id: "S46", name: "Estée Lauder雅诗兰黛", floor: 1, type: "Store", location: Point(421.528, -214.582)),
+    Store(id: "S47", name: "JO MALONE", floor: 1, type: "Store", location: Point(405.611, -204.042)),
+    Store(id: "S48", name: "lululemon", floor: 1, type: "Store", location: Point(655.823, -133.652)),
+    Store(id: "S49", name: "Chloé", floor: 1, type: "Store", location: Point(332.591, -132.079)),
   ];
 
   static List<Store> searchStores(String query) {
@@ -933,59 +936,8 @@ class WalkableAreaData {
       ]],
     ),
   ];
-  // 店铺坐标映射表 - 从GeoJSON数据中提取的实际坐标
-  static Map<String, Point> storeCoordinates = {
-    // 根据GeoJSON数据计算的店铺中心点坐标
-    "S1": Point(506.505, -162.284),    // 蔚来汽车
-    "S2": Point(506.505, -162.284),    // HARMAY (与S1相同区域)
-    "S3": Point(506.505, -162.284),    // GUCCI beauty (与S1相同区域)
-    "S4": Point(506.505, -162.284),    // ZARA HOME (与S1相同区域)
-    "S5": Point(627.754, -145.906),    // CHANEL
-    "S6": Point(627.754, -145.906),    // Jmoon极萌/ulike (与S5相同区域)
-    "S7": Point(627.754, -145.906),    // LANCASTER (与S5相同区域)
-    "S8": Point(588.835, -130.926),    // 空店铺
-    "S9": Point(573.490, -128.738),    // COACH
-    "S10": Point(736.563, -119.098),   // Abercrombie&Fitch
-    "S11": Point(806.176, -159.914),   // Ciao Panificio by B&C
-    "S12": Point(847.077, -160.340),   // 空店铺
-    "S13": Point(799.512, -278.997),   // 空店铺
-    "S14": Point(801.530, -245.441),   // Venchi
-    "S15": Point(844.326, -378.062),   // SHAKE SHACK
-    "S16": Point(841.540, -330.041),   // SHAKE SHACK
-    "S17": Point(698.965, -339.268),   // SEPHORA
-    "S18": Point(753.616, -334.220),   // HOKA
-    "S19": Point(764.888, -394.968),   // gaga鲜语
-    "S20": Point(527.881, -373.583),   // 星巴克臻选
-    "S21": Point(573.166, -370.289),   // KLATTER MUSEN
-    "S22": Point(622.122, -346.326),   // HELLY HANSEN
-    "S23": Point(449.506, -378.855),   // Massimo Dutti
-    "S24": Point(219.622, -341.441),   // i.t(含Fred Perry)
-    "S25": Point(296.019, -353.540),   // APM Monaco
-    "S26": Point(329.641, -367.176),   // Mardi Mercredi
-    "S27": Point(360.480, -372.225),   // Mardi Mercredi
-    "S28": Point(543.048, -298.104),   // DESCENTE迪桑特
-    "S29": Point(542.140, -256.242),   // DESCENTE迪桑特
-    "S30": Point(539.619, -212.958),   // YSL
-    "S31": Point(549.634, -203.250),   // Shu uemura
-    "S32": Point(579.304, -286.900),   // DESCENTE迪桑特
-    "S33": Point(579.370, -225.555),   // GIVENCHY纪梵希
-    "S34": Point(613.867, -281.555),   // ON昂跑
-    "S35": Point(613.867, -236.074),   // LANCOME
-    "S36": Point(658.203, -274.805),   // ON昂跑
-    "S37": Point(643.729, -237.323),   // 悦木之源ORIGINS
-    "S38": Point(671.103, -242.320),   // MAC
-    "S39": Point(311.959, -279.360),   // AAPE
-    "S40": Point(373.039, -284.130),   // GROTTO
-    "S41": Point(281.966, -240.053),   // DIOR
-    "S42": Point(309.220, -230.116),   // DIOR
-    "S43": Point(339.049, -228.366),   // 娇韵诗CLARINS
-    "S44": Point(373.037, -218.495),   // Guerlain娇兰
-    "S45": Point(411.471, -277.706),   // SMFK
-    "S46": Point(413.528, -214.530),   // Estée Lauder雅诗兰黛
-    "S47": Point(405.834, -202.041),   // JO MALONE
-    "S48": Point(655.927, -135.665),   // lululemon
-    "S49": Point(329.191, -129.125),   // Chloé
-  };
+  
+
 
   // 计算两点之间的距离
   static double distance(Point p1, Point p2) {
@@ -1039,24 +991,82 @@ class WalkableAreaData {
   }
 
   // 查找最近的可行走区域
-  static String? findNearestWalkableArea(String storeId) {
-    Point? storeLocation = storeCoordinates[storeId];
-    if (storeLocation == null) return null;
+    static String? findNearestWalkableArea(String storeId) {
+  Store? store;
+  try {
+    store = StoreData.stores.firstWhere((s) => s.id == storeId);
+  } catch (e) {
+    return null;
+  }
+  
+  if (store?.location == null) return null;
+  Point storeLocation = store!.location!;
 
-    double minDistance = double.infinity;
-    String? nearestAreaId;
+  double minDistance = double.infinity;
+  String? nearestAreaId;
 
-    for (WalkableArea area in areas) {
-      if (area.coordinates.isNotEmpty) {
-        double dist = distanceToPolygon(storeLocation, area.coordinates[0]);
-        if (dist < minDistance) {
-          minDistance = dist;
-          nearestAreaId = area.id;
-        }
+  for (WalkableArea area in areas) {
+    if (area.coordinates.isNotEmpty) {
+      double dist = distanceToPolygon(storeLocation, area.coordinates[0]);
+      if (dist < minDistance) {
+        minDistance = dist;
+        nearestAreaId = area.id;
       }
     }
+  }
 
-    return nearestAreaId;
+  return nearestAreaId;
+}
+
+  // 修改获取店铺周围的可行走区域方法
+  static List<String> getNearbyWalkableAreas(String storeId, {double radius = 100.0}) {
+  Store? store;
+  try {
+    store = StoreData.stores.firstWhere((s) => s.id == storeId);
+  } catch (e) {
+    return [];
+  }
+  
+  if (store?.location == null) return [];
+  Point storeLocation = store!.location!;
+
+  List<String> nearbyAreas = [];
+  
+  for (WalkableArea area in areas) {
+    if (area.coordinates.isNotEmpty) {
+      double dist = distanceToPolygon(storeLocation, area.coordinates[0]);
+      if (dist <= radius) {
+        nearbyAreas.add(area.id);
+      }
+    }
+  }
+  
+  // 按距离排序
+  nearbyAreas.sort((a, b) {
+    WalkableArea? areaA = getAreaById(a);
+    WalkableArea? areaB = getAreaById(b);
+    if (areaA == null || areaB == null) return 0;
+    
+    double distA = distanceToPolygon(storeLocation, areaA.coordinates[0]);
+    double distB = distanceToPolygon(storeLocation, areaB.coordinates[0]);
+    return distA.compareTo(distB);
+  });
+  
+  return nearbyAreas;
+}
+
+  // 修改获取区域统计信息
+  static Map<String, int> getAreaStatistics() {
+    Map<int, int> floorCounts = {};
+    for (WalkableArea area in areas) {
+      floorCounts[area.floor] = (floorCounts[area.floor] ?? 0) + 1;
+    }
+    
+    return {
+      'totalAreas': areas.length,
+      'floor1Areas': floorCounts[1] ?? 0,
+      'totalStores': StoreData.stores.length, // 改为从StoreData获取
+    };
   }
 
   // 获取指定楼层的可行走区域
@@ -1108,49 +1118,7 @@ class WalkableAreaData {
     return intersections % 2 == 1;
   }
 
-  // 获取区域统计信息
-  static Map<String, int> getAreaStatistics() {
-    Map<int, int> floorCounts = {};
-    for (WalkableArea area in areas) {
-      floorCounts[area.floor] = (floorCounts[area.floor] ?? 0) + 1;
-    }
-    
-    return {
-      'totalAreas': areas.length,
-      'floor1Areas': floorCounts[1] ?? 0,
-      'totalStores': storeCoordinates.length,
-    };
-  }
 
-  // 获取店铺周围的可行走区域（可选功能）
-  static List<String> getNearbyWalkableAreas(String storeId, {double radius = 100.0}) {
-    Point? storeLocation = storeCoordinates[storeId];
-    if (storeLocation == null) return [];
-
-    List<String> nearbyAreas = [];
-    
-    for (WalkableArea area in areas) {
-      if (area.coordinates.isNotEmpty) {
-        double dist = distanceToPolygon(storeLocation, area.coordinates[0]);
-        if (dist <= radius) {
-          nearbyAreas.add(area.id);
-        }
-      }
-    }
-    
-    // 按距离排序
-    nearbyAreas.sort((a, b) {
-      WalkableArea? areaA = getAreaById(a);
-      WalkableArea? areaB = getAreaById(b);
-      if (areaA == null || areaB == null) return 0;
-      
-      double distA = distanceToPolygon(storeLocation, areaA.coordinates[0]);
-      double distB = distanceToPolygon(storeLocation, areaB.coordinates[0]);
-      return distA.compareTo(distB);
-    });
-    
-    return nearbyAreas;
-  }
 }
 
 
