@@ -24,3 +24,4 @@ flutter:
   # 添加资源配置
   assets:
     - assets/maps/
+    - assets/geojson/

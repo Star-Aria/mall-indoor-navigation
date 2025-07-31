@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
-// 数据模型类
+
 // 数据模型类
 class Store {
   final String id;
@@ -1121,6 +1123,426 @@ class WalkableAreaData {
 
 }
 
+// GeoJSON数据模型
+class GeoJsonFeature {
+  final String id;
+  final String type;
+  final int floor;
+  final String? name;
+  final List<List<List<Point>>> coordinates; // 支持MultiPolygon和Polygon
+
+  GeoJsonFeature({
+    required this.id,
+    required this.type,
+    required this.floor,
+    this.name,
+    required this.coordinates,
+  });
+}
+
+class GeoJsonData {
+  static List<GeoJsonFeature> barriers = [];
+  static List<GeoJsonFeature> stores = [];
+  static bool isLoaded = false;
+
+  static Future<void> loadGeoJsonData() async {
+    if (isLoaded) return;
+
+    try {
+      // 加载Barrier数据
+      final barrierString = await rootBundle.loadString('assets/geojson/Barrier.geojson');
+      final barrierJson = json.decode(barrierString);
+      
+      for (var feature in barrierJson['features']) {
+        final coords = feature['geometry']['coordinates'] as List;
+        List<List<List<Point>>> parsedCoords = [];
+        
+        // 处理MultiPolygon格式 - 修复上下颠倒问题
+        for (var polygon in coords) {
+          List<List<Point>> polygonRings = [];
+          for (var ring in polygon) {
+            List<Point> ringPoints = [];
+            for (var coord in ring) {
+              // 修复上下颠倒：将Y坐标取负值
+              ringPoints.add(Point(coord[0].toDouble(), -coord[1].toDouble()));
+            }
+            polygonRings.add(ringPoints);
+          }
+          parsedCoords.add(polygonRings);
+        }
+        
+        barriers.add(GeoJsonFeature(
+          id: feature['properties']['id'],
+          type: feature['properties']['type'],
+          floor: int.parse(feature['properties']['floor']),
+          coordinates: parsedCoords,
+        ));
+      }
+
+      // 加载Store数据
+      final storeString = await rootBundle.loadString('assets/geojson/Store1.geojson');
+      final storeJson = json.decode(storeString);
+      
+      for (var feature in storeJson['features']) {
+        final coords = feature['geometry']['coordinates'][0] as List; // Polygon格式
+        List<Point> ringPoints = [];
+        for (var coord in coords) {
+          // 修复上下颠倒：将Y坐标取负值
+          ringPoints.add(Point(coord[0].toDouble(), -coord[1].toDouble()));
+        }
+        
+        stores.add(GeoJsonFeature(
+          id: feature['properties']['id'],
+          type: feature['properties']['type'],
+          floor: feature['properties']['floor'],
+          name: feature['properties']['name'],
+          coordinates: [[ringPoints]], // 包装成MultiPolygon格式
+        ));
+      }
+      
+      isLoaded = true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading GeoJSON data: $e');
+      }
+    }
+  }
+}
+
+// 自定义地图画板
+class MapPainter extends CustomPainter {
+  final int floor;
+  final double scale;
+  final Offset offset;
+
+  MapPainter({
+    required this.floor,
+    this.scale = 1.0,
+    this.offset = Offset.zero,
+  });
+
+  @override
+void paint(Canvas canvas, Size size) {
+  // 计算坐标转换参数
+  final bounds = _calculateBounds();
+  final boundsWidth = bounds['maxX']! - bounds['minX']!;
+  final boundsHeight = bounds['maxY']! - bounds['minY']!;
+  
+  // 计算缩放比例，使地图高度撑满容器
+  final scaleX = size.width / boundsWidth;
+  final scaleY = size.height / boundsHeight;
+  final mapScale = scaleY * scale; // 使用高度作为基准，让地图高度填满容器
+  
+  final centerX = size.width / 2;
+  final centerY = size.height / 2;
+  
+  canvas.save();
+  canvas.translate(
+    centerX - (boundsWidth * mapScale / 2) + offset.dx,
+    centerY - (boundsHeight * mapScale / 2) + offset.dy,
+  );
+  canvas.scale(mapScale);
+  canvas.translate(-bounds['minX']!, -bounds['minY']!);
+
+  // 绘制背景（可行走区域）
+  _drawWalkableArea(canvas, size, bounds);
+  
+  // 绘制障碍物
+  _drawBarriers(canvas);
+  
+  // 绘制商店
+  _drawStores(canvas);
+  
+  // 智能绘制商店标签
+  _drawStoreLabelsIntelligent(canvas, size, mapScale, offset);
+  
+  canvas.restore();
+}
+
+// 修改智能标签绘制方法
+void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double currentScale, Offset currentOffset) {
+  // 根据容器尺寸和缩放级别调整字体大小
+  final baseFontSize = math.min(size.width, size.height) / 60; // 基于容器大小的基础字体
+  final scaledFontSize = baseFontSize * scale; // 考虑用户缩放
+  final fontSize = math.max(8.0, math.min(20.0, scaledFontSize));
+  
+  // 根据容器大小调整最小显示缩放级别
+  final containerArea = size.width * size.height;
+  final minScale = containerArea < 200000 ? 0.8 : 0.3; // 小屏幕提高显示门槛
+  
+  if (scale < minScale) return; // 缩放太小时不显示标签
+  
+  List<Rect> occupiedAreas = [];
+  
+  for (var store in GeoJsonData.stores) {
+    if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
+      Point? center = _calculatePolygonCenter(store.coordinates);
+      if (center == null) continue;
+      
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: store.name,
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      
+      final textOffset = Offset(
+        center.x - textPainter.width / 2,
+        center.y - textPainter.height / 2,
+      );
+      
+      // 创建文字区域
+      final textRect = Rect.fromLTWH(
+        textOffset.dx - 3,
+        textOffset.dy - 2,
+        textPainter.width + 6,
+        textPainter.height + 4,
+      );
+      
+      // 检查重叠并根据不同条件决定是否显示
+      bool hasOverlap = occupiedAreas.any((rect) => rect.overlaps(textRect.inflate(2)));
+      
+      if (hasOverlap) {
+        // 小屏幕或低缩放时，跳过重叠标签
+        if (containerArea < 200000 || scale < 1.2) continue;
+        // 长名称需要更高缩放才显示
+        if (store.name!.length > 8 && scale < 1.8) continue;
+      }
+      
+      // 小屏幕时优先显示短名称
+      if (containerArea < 150000 && store.name!.length > 6 && scale < 1.5) continue;
+      
+      occupiedAreas.add(textRect);
+      
+      // 绘制半透明背景
+      final bgPaint = Paint()
+        ..color = Colors.white.withOpacity(0.9)
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(textRect, const Radius.circular(2)),
+        bgPaint,
+      );
+      
+      // 绘制细边框
+      final borderPaint = Paint()
+        ..color = Colors.grey.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5;
+      
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(textRect, const Radius.circular(2)),
+        borderPaint,
+      );
+      
+      // 绘制文字
+      textPainter.paint(canvas, textOffset);
+    }
+  }
+}
+
+
+  Map<String, double> _calculateBounds() {
+    double minX = double.infinity;
+    double maxX = double.negativeInfinity;
+    double minY = double.infinity;
+    double maxY = double.negativeInfinity;
+
+    // 计算所有特征的边界
+    for (var barrier in GeoJsonData.barriers) {
+      if (barrier.floor == floor) {
+        for (var polygon in barrier.coordinates) {
+          for (var ring in polygon) {
+            for (var point in ring) {
+              minX = math.min(minX, point.x);
+              maxX = math.max(maxX, point.x);
+              minY = math.min(minY, point.y);
+              maxY = math.max(maxY, point.y);
+            }
+          }
+        }
+      }
+    }
+
+    for (var store in GeoJsonData.stores) {
+      if (store.floor == floor) {
+        for (var polygon in store.coordinates) {
+          for (var ring in polygon) {
+            for (var point in ring) {
+              minX = math.min(minX, point.x);
+              maxX = math.max(maxX, point.x);
+              minY = math.min(minY, point.y);
+              maxY = math.max(maxY, point.y);
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      'minX': minX,
+      'maxX': maxX,
+      'minY': minY,
+      'maxY': maxY,
+    };
+  }
+
+  void _drawWalkableArea(Canvas canvas, Size size, Map<String, double> bounds) {
+    final paint = Paint()
+      ..color = Colors.lightGreen.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    // 绘制整个区域作为可行走区域背景
+    final rect = Rect.fromLTRB(
+      bounds['minX']!,
+      bounds['minY']!,
+      bounds['maxX']!,
+      bounds['maxY']!,
+    );
+    canvas.drawRect(rect, paint);
+  }
+
+  void _drawBarriers(Canvas canvas) {
+    final paint = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    final strokePaint = Paint()
+      ..color = Colors.red.shade800
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    for (var barrier in GeoJsonData.barriers) {
+      if (barrier.floor == floor) {
+        for (var polygon in barrier.coordinates) {
+          for (var ring in polygon) {
+            final path = Path();
+            if (ring.isNotEmpty) {
+              path.moveTo(ring[0].x, ring[0].y);
+              for (int i = 1; i < ring.length; i++) {
+                path.lineTo(ring[i].x, ring[i].y);
+              }
+              path.close();
+              canvas.drawPath(path, paint);
+              canvas.drawPath(path, strokePaint);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void _drawStores(Canvas canvas) {
+    final paint = Paint()
+      ..color = Colors.blue.shade300
+      ..style = PaintingStyle.fill;
+
+    final strokePaint = Paint()
+      ..color = Colors.blue.shade800
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    for (var store in GeoJsonData.stores) {
+      if (store.floor == floor) {
+        for (var polygon in store.coordinates) {
+          for (var ring in polygon) {
+            final path = Path();
+            if (ring.isNotEmpty) {
+              path.moveTo(ring[0].x, ring[0].y);
+              for (int i = 1; i < ring.length; i++) {
+                path.lineTo(ring[i].x, ring[i].y);
+              }
+              path.close();
+              canvas.drawPath(path, paint);
+              canvas.drawPath(path, strokePaint);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void _drawStoreLabels(Canvas canvas, double currentScale) {
+    for (var store in GeoJsonData.stores) {
+      if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
+        // 计算商店中心点
+        Point? center = _calculatePolygonCenter(store.coordinates);
+        if (center != null) {
+          // 绘制商店名称
+          final textPainter = TextPainter(
+            text: TextSpan(
+              text: store.name,
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: math.max(8.0, 12.0 / currentScale),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          );
+          textPainter.layout();
+          
+          final textOffset = Offset(
+            center.x - textPainter.width / 2,
+            center.y - textPainter.height / 2,
+          );
+          
+          // 绘制文字背景
+          final bgPaint = Paint()
+            ..color = Colors.white.withOpacity(0.8)
+            ..style = PaintingStyle.fill;
+          
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(
+                textOffset.dx - 2,
+                textOffset.dy - 1,
+                textPainter.width + 4,
+                textPainter.height + 2,
+              ),
+              const Radius.circular(2),
+            ),
+            bgPaint,
+          );
+          
+          textPainter.paint(canvas, textOffset);
+        }
+      }
+    }
+  }
+
+  Point? _calculatePolygonCenter(List<List<List<Point>>> coordinates) {
+    double totalX = 0;
+    double totalY = 0;
+    int pointCount = 0;
+
+    for (var polygon in coordinates) {
+      for (var ring in polygon) {
+        for (var point in ring) {
+          totalX += point.x;
+          totalY += point.y;
+          pointCount++;
+        }
+      }
+    }
+
+    if (pointCount == 0) return null;
+    return Point(totalX / pointCount, totalY / pointCount);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+
 
 void main() {
   runApp(const MallNavigationApp());
@@ -1153,6 +1575,20 @@ class _HomePageState extends State<HomePage> {
   String selectedFloor = 'F1';
   bool isFullScreen = false;
   final List<String> floors = ['F6', 'F5', 'F4', 'F3', 'F2', 'F1', 'B1', 'B2'];
+
+  int _getFloorNumber(String floor) {
+    switch (floor) {
+      case 'F6': return 6;
+      case 'F5': return 5;
+      case 'F4': return 4;
+      case 'F3': return 3;
+      case 'F2': return 2;
+      case 'F1': return 1;
+      case 'B1': return -1;
+      case 'B2': return -2;
+      default: return 1;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1201,7 +1637,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   // 左侧楼层导航
-  // 左侧楼层导航 - 缩小版本
 Widget _buildFloorNavigation() {
   return Positioned(
     left: 16,
@@ -1411,87 +1846,57 @@ Widget _buildSearchBar() {
     return SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          double containerHeight = constraints.maxHeight;
-          double containerWidth = constraints.maxWidth;
+      child: FutureBuilder<void>(
+        future: GeoJsonData.loadGeoJsonData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
           
-          double mapAspectRatio = 2.0 / 1.0;
-          double mapHeight = containerHeight;
-          double mapWidth = mapHeight * mapAspectRatio;
-          
-          return InteractiveViewer(
-            minScale: 1.0,
-            maxScale: 3.0,
-            boundaryMargin: EdgeInsets.zero,
-            panEnabled: true,
-            scaleEnabled: true,
-            constrained: false,
-            child: Container(
-              width: mapWidth,
-              height: mapHeight,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('加载地图数据失败: ${snapshot.error}'),
+                ],
               ),
-              child: Image.asset(
-                'assets/maps/$selectedFloor.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.map,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '$selectedFloor 楼层地图',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '容器: ${containerWidth.toInt()}x${containerHeight.toInt()}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                          Text(
-                            '地图: ${mapWidth.toInt()}x${mapHeight.toInt()}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '👈👉 左右拖拽查看更多区域',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            );
+          }
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 3.0,
+                boundaryMargin: const EdgeInsets.all(20),
+                panEnabled: true,
+                scaleEnabled: true,
+                constrained: false,
+                child: Container(
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.blue, width: 2),
+                    color: Colors.grey[100],
+                  ),
+                  child: CustomPaint(
+                    painter: MapPainter(floor: _getFloorNumber(selectedFloor)),
+                    size: Size(constraints.maxWidth, constraints.maxHeight),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
+
 
   // 右侧功能按钮
   Widget _buildRightSideButtons() {
