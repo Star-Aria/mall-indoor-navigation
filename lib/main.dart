@@ -1259,33 +1259,56 @@ void paint(Canvas canvas, Size size) {
   canvas.restore();
 }
 
-// 修改智能标签绘制方法
-void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double currentScale, Offset currentOffset) {
-  // 根据容器尺寸和缩放级别调整字体大小
-  final baseFontSize = math.min(size.width, size.height) / 60; // 基于容器大小的基础字体
-  final scaledFontSize = baseFontSize * scale; // 考虑用户缩放
-  final fontSize = math.max(8.0, math.min(20.0, scaledFontSize));
+void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offset offset) {
+  // 调试输出当前缩放值
+  if (kDebugMode) {
+    print('当前scale值: $scale');
+  }
   
-  // 根据容器大小调整最小显示缩放级别
-  final containerArea = size.width * size.height;
-  final minScale = containerArea < 200000 ? 0.8 : 0.3; // 小屏幕提高显示门槛
+  // 根据当前的scale值确定显示标签的数量
+  int maxLabelsToShow;
+  if (scale >= 2.8) {
+    maxLabelsToShow = 999; // 显示所有标签
+  } else if (scale >= 2.4) {
+    maxLabelsToShow = 50;
+  } else if (scale >= 2.0) {
+    maxLabelsToShow = 40;
+  } else if (scale >= 1.6) {
+    maxLabelsToShow = 30;
+  } else if (scale >= 1.3) {
+    maxLabelsToShow = 20;
+  } else {
+    maxLabelsToShow = 10; // 最小显示3个
+  }
   
-  if (scale < minScale) return; // 缩放太小时不显示标签
+  // 获取所有有名称的店铺
+  List<dynamic> allStores = GeoJsonData.stores
+    .where((store) => store.floor == floor && store.name != null && store.name!.isNotEmpty)
+    .toList();
   
-  List<Rect> occupiedAreas = [];
+  // 按名称长度排序，优先显示短名称
+  allStores.sort((a, b) => a.name!.length.compareTo(b.name!.length));
   
-  for (var store in GeoJsonData.stores) {
-    if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
-      Point? center = _calculatePolygonCenter(store.coordinates);
-      if (center == null) continue;
-      
+  // 只取前N个店铺显示标签
+  List<dynamic> storesToShow = allStores.take(maxLabelsToShow).toList();
+  
+  // 调试输出
+  if (kDebugMode) {
+    print('应显示${maxLabelsToShow}个标签，实际显示${storesToShow.length}个');
+  }
+  
+  for (var store in storesToShow) {
+    // 计算商店中心点
+    Point? center = _calculatePolygonCenter(store.coordinates);
+    if (center != null) {
+      // 绘制商店名称
       final textPainter = TextPainter(
         text: TextSpan(
           text: store.name,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black87,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
+            fontSize: 12.0,
+            fontWeight: FontWeight.bold,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -1297,55 +1320,31 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double currentScale, 
         center.y - textPainter.height / 2,
       );
       
-      // 创建文字区域
-      final textRect = Rect.fromLTWH(
-        textOffset.dx - 3,
-        textOffset.dy - 2,
-        textPainter.width + 6,
-        textPainter.height + 4,
-      );
-      
-      // 检查重叠并根据不同条件决定是否显示
-      bool hasOverlap = occupiedAreas.any((rect) => rect.overlaps(textRect.inflate(2)));
-      
-      if (hasOverlap) {
-        // 小屏幕或低缩放时，跳过重叠标签
-        if (containerArea < 200000 || scale < 1.2) continue;
-        // 长名称需要更高缩放才显示
-        if (store.name!.length > 8 && scale < 1.8) continue;
-      }
-      
-      // 小屏幕时优先显示短名称
-      if (containerArea < 150000 && store.name!.length > 6 && scale < 1.5) continue;
-      
-      occupiedAreas.add(textRect);
-      
-      // 绘制半透明背景
+      // 绘制文字背景
       final bgPaint = Paint()
-        ..color = Colors.white.withOpacity(0.9)
+        ..color = Colors.white.withOpacity(0.8)
         ..style = PaintingStyle.fill;
       
       canvas.drawRRect(
-        RRect.fromRectAndRadius(textRect, const Radius.circular(2)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            textOffset.dx - 2,
+            textOffset.dy - 1,
+            textPainter.width + 4,
+            textPainter.height + 2,
+          ),
+          const Radius.circular(2),
+        ),
         bgPaint,
       );
       
-      // 绘制细边框
-      final borderPaint = Paint()
-        ..color = Colors.grey.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(textRect, const Radius.circular(2)),
-        borderPaint,
-      );
-      
-      // 绘制文字
       textPainter.paint(canvas, textOffset);
     }
   }
 }
+
+
+
 
 
   Map<String, double> _calculateBounds() {
@@ -1575,6 +1574,36 @@ class _HomePageState extends State<HomePage> {
   String selectedFloor = 'F1';
   bool isFullScreen = false;
   final List<String> floors = ['F6', 'F5', 'F4', 'F3', 'F2', 'F1', 'B1', 'B2'];
+
+  // 添加这两个变量来跟踪缩放和平移
+  double _currentScale = 1.0;
+  late TransformationController _transformationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformationController = TransformationController();
+    _transformationController.addListener(_onTransformationChanged);
+  }
+
+  @override
+  void dispose() {
+    _transformationController.removeListener(_onTransformationChanged);
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _onTransformationChanged() {
+  final Matrix4 matrix = _transformationController.value;
+  final double scale = matrix.getMaxScaleOnAxis();
+  // 增加阈值，减少更新频率
+  if ((_currentScale - scale).abs() > 0.3) { 
+    setState(() {
+      _currentScale = scale;
+    });
+  }
+}
+
 
   int _getFloorNumber(String floor) {
     switch (floor) {
@@ -1843,59 +1872,68 @@ Widget _buildSearchBar() {
 
   // 地图区域
   Widget _buildMapArea() {
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: FutureBuilder<void>(
-        future: GeoJsonData.loadGeoJsonData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('加载地图数据失败: ${snapshot.error}'),
-                ],
+  return SizedBox(
+    width: double.infinity,
+    height: double.infinity,
+    child: FutureBuilder<void>(
+      future: GeoJsonData.loadGeoJsonData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text('加载地图数据失败: ${snapshot.error}'),
+              ],
+            ),
+          );
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 3.0,
+              boundaryMargin: const EdgeInsets.all(20),
+              panEnabled: true,
+              scaleEnabled: true,
+              constrained: true,
+              transformationController: _transformationController,
+              child: Container(
+                width: constraints.maxWidth, // 改回正常大小
+                height: constraints.maxHeight, // 改回正常大小
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue, width: 2),
+                  color: Colors.grey[100],
+                ),
+                child: CustomPaint(
+                  painter: MapPainter(
+                    floor: _getFloorNumber(selectedFloor),
+                    scale: _currentScale,
+                  ),
+                  size: Size(constraints.maxWidth, constraints.maxHeight), // 改回正常大小
+                ),
               ),
             );
-          }
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              return InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 3.0,
-                boundaryMargin: const EdgeInsets.all(20),
-                panEnabled: true,
-                scaleEnabled: true,
-                constrained: false,
-                child: Container(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.blue, width: 2),
-                    color: Colors.grey[100],
-                  ),
-                  child: CustomPaint(
-                    painter: MapPainter(floor: _getFloorNumber(selectedFloor)),
-                    size: Size(constraints.maxWidth, constraints.maxHeight),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
+
+          },
+        );
+      },
+    ),
+  );
+}
+
+
+
 
 
   // 右侧功能按钮
