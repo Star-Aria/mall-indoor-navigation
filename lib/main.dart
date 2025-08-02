@@ -1915,7 +1915,6 @@ Widget _buildMapArea() {
               panEnabled: true,
               scaleEnabled: true,
               constrained: false,
-              transformationController: _transformationController,
               child: Container(
                 width: mapWidth,
                 height: mapHeight,
