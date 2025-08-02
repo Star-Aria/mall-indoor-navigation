@@ -1270,15 +1270,15 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offs
   if (scale >= 2.8) {
     maxLabelsToShow = 999; // 显示所有标签
   } else if (scale >= 2.4) {
-    maxLabelsToShow = 50;
+    maxLabelsToShow = 60;
   } else if (scale >= 2.0) {
-    maxLabelsToShow = 40;
+    maxLabelsToShow = 50;
   } else if (scale >= 1.6) {
-    maxLabelsToShow = 30;
+    maxLabelsToShow = 40;
   } else if (scale >= 1.3) {
-    maxLabelsToShow = 20;
+    maxLabelsToShow = 30;
   } else {
-    maxLabelsToShow = 10; // 最小显示3个
+    maxLabelsToShow = 20; // 最小显示20个
   }
   
   // 获取所有有名称的店铺
@@ -1394,7 +1394,7 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offs
 
   void _drawWalkableArea(Canvas canvas, Size size, Map<String, double> bounds) {
     final paint = Paint()
-      ..color = Colors.lightGreen.withOpacity(0.3)
+      ..color = const Color(0xFFF5F5DC)
       ..style = PaintingStyle.fill;
 
     // 绘制整个区域作为可行走区域背景
@@ -1409,11 +1409,11 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offs
 
   void _drawBarriers(Canvas canvas) {
     final paint = Paint()
-      ..color = Colors.red
+      ..color = const Color.fromARGB(255, 235, 235, 235) // 暗灰色
       ..style = PaintingStyle.fill;
 
     final strokePaint = Paint()
-      ..color = Colors.red.shade800
+      ..color = const Color.fromARGB(255, 102, 102, 102) // 深灰色边框
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -1439,7 +1439,7 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offs
 
   void _drawStores(Canvas canvas) {
     final paint = Paint()
-      ..color = Colors.blue.shade300
+      ..color = const Color.fromARGB(255, 132, 194, 244)
       ..style = PaintingStyle.fill;
 
     final strokePaint = Paint()
@@ -1575,9 +1575,11 @@ class _HomePageState extends State<HomePage> {
   bool isFullScreen = false;
   final List<String> floors = ['F6', 'F5', 'F4', 'F3', 'F2', 'F1', 'B1', 'B2'];
 
+
   // 添加这两个变量来跟踪缩放和平移
   double _currentScale = 1.0;
   late TransformationController _transformationController;
+  
 
   @override
   void initState() {
@@ -1871,7 +1873,7 @@ Widget _buildSearchBar() {
 
 
   // 地图区域
-  Widget _buildMapArea() {
+Widget _buildMapArea() {
   return SizedBox(
     width: double.infinity,
     height: double.infinity,
@@ -1899,40 +1901,42 @@ Widget _buildSearchBar() {
 
         return LayoutBuilder(
           builder: (context, constraints) {
+            double containerHeight = constraints.maxHeight;
+            double containerWidth = constraints.maxWidth;
+            
+            double mapAspectRatio = 2.0 / 1.0;
+            double mapHeight = containerHeight;
+            double mapWidth = mapHeight * mapAspectRatio;
+            
             return InteractiveViewer(
-              minScale: 0.5,
+              minScale: 1.0,
               maxScale: 3.0,
-              boundaryMargin: const EdgeInsets.all(20),
+              boundaryMargin: EdgeInsets.zero,
               panEnabled: true,
               scaleEnabled: true,
-              constrained: true,
+              constrained: false,
               transformationController: _transformationController,
               child: Container(
-                width: constraints.maxWidth, // 改回正常大小
-                height: constraints.maxHeight, // 改回正常大小
+                width: mapWidth,
+                height: mapHeight,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.blue, width: 2),
-                  color: Colors.grey[100],
                 ),
                 child: CustomPaint(
                   painter: MapPainter(
                     floor: _getFloorNumber(selectedFloor),
                     scale: _currentScale,
                   ),
-                  size: Size(constraints.maxWidth, constraints.maxHeight), // 改回正常大小
+                  size: Size(mapWidth, mapHeight),
                 ),
               ),
             );
-
-
           },
         );
       },
     ),
   );
 }
-
-
 
 
 
@@ -2159,7 +2163,7 @@ Widget _buildSearchHeader() {
         ),
         const SizedBox(width: 8), // 减小间距
         
-        // 搜索输入框 - 缩小版本
+        // 搜索输入框
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8), // 减小padding
