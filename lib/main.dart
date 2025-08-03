@@ -1260,91 +1260,53 @@ void paint(Canvas canvas, Size size) {
 }
 
 void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offset offset) {
-  // 调试输出当前缩放值
-  if (kDebugMode) {
-    print('当前scale值: $scale');
-  }
-  
-  // 根据当前的scale值确定显示标签的数量
-  int maxLabelsToShow;
-  if (scale >= 2.8) {
-    maxLabelsToShow = 999; // 显示所有标签
-  } else if (scale >= 2.4) {
-    maxLabelsToShow = 60;
-  } else if (scale >= 2.0) {
-    maxLabelsToShow = 50;
-  } else if (scale >= 1.6) {
-    maxLabelsToShow = 40;
-  } else if (scale >= 1.3) {
-    maxLabelsToShow = 30;
-  } else {
-    maxLabelsToShow = 20; // 最小显示20个
-  }
-  
-  // 获取所有有名称的店铺
-  List<dynamic> allStores = GeoJsonData.stores
-    .where((store) => store.floor == floor && store.name != null && store.name!.isNotEmpty)
-    .toList();
-  
-  // 按名称长度排序，优先显示短名称
-  allStores.sort((a, b) => a.name!.length.compareTo(b.name!.length));
-  
-  // 只取前N个店铺显示标签
-  List<dynamic> storesToShow = allStores.take(maxLabelsToShow).toList();
-  
-  // 调试输出
-  if (kDebugMode) {
-    print('应显示${maxLabelsToShow}个标签，实际显示${storesToShow.length}个');
-  }
-  
-  for (var store in storesToShow) {
-    // 计算商店中心点
-    Point? center = _calculatePolygonCenter(store.coordinates);
-    if (center != null) {
-      // 绘制商店名称
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: store.name,
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 12.0,
-            fontWeight: FontWeight.bold,
+  for (var store in GeoJsonData.stores) {
+    if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
+      // 计算商店中心点
+      Point? center = _calculatePolygonCenter(store.coordinates);
+      if (center != null) {
+        // 绘制商店名称
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: store.name,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 12.0,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      
-      final textOffset = Offset(
-        center.x - textPainter.width / 2,
-        center.y - textPainter.height / 2,
-      );
-      
-      // 绘制文字背景
-      final bgPaint = Paint()
-        ..color = Colors.white.withOpacity(0.8)
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            textOffset.dx - 2,
-            textOffset.dy - 1,
-            textPainter.width + 4,
-            textPainter.height + 2,
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        
+        final textOffset = Offset(
+          center.x - textPainter.width / 2,
+          center.y - textPainter.height / 2,
+        );
+        
+        // 绘制文字背景
+        final bgPaint = Paint()
+          ..color = Colors.white.withOpacity(0.8)
+          ..style = PaintingStyle.fill;
+        
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              textOffset.dx - 2,
+              textOffset.dy - 1,
+              textPainter.width + 4,
+              textPainter.height + 2,
+            ),
+            const Radius.circular(2),
           ),
-          const Radius.circular(2),
-        ),
-        bgPaint,
-      );
-      
-      textPainter.paint(canvas, textOffset);
+          bgPaint,
+        );
+        
+        textPainter.paint(canvas, textOffset);
+      }
     }
   }
 }
-
-
-
 
 
   Map<String, double> _calculateBounds() {
@@ -1394,7 +1356,7 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offs
 
   void _drawWalkableArea(Canvas canvas, Size size, Map<String, double> bounds) {
     final paint = Paint()
-      ..color = const Color(0xFFF5F5DC)
+      ..color = const Color.fromARGB(255, 225, 246, 215)
       ..style = PaintingStyle.fill;
 
     // 绘制整个区域作为可行走区域背景
