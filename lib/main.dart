@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // 包含 Colors
 import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'dart:ui' show PointMode, Path, Canvas, Offset, Size, Rect, RRect, Radius, PathFillType, TileMode, Gradient, Color, TextDirection, Image, Vertices, BlendMode, FilterQuality, StrokeCap, StrokeJoin, PaintingStyle, TextAlign, TextBaseline, TextBox, Shadow, MaskFilter, ColorFilter, ImageFilter, Shader, Paint, TextStyle, TextPainter;
 
 
 // 数据模型类
@@ -1214,11 +1215,15 @@ class MapPainter extends CustomPainter {
   final int floor;
   final double scale;
   final Offset offset;
+  final List<String> highlightedAreas; // 添加高亮区域参数
+  final Function(Store)? onStoreTap; // 添加店铺点击回调
 
   MapPainter({
     required this.floor,
     this.scale = 1.0,
     this.offset = Offset.zero,
+    this.highlightedAreas = const [], // 初始化高亮区域
+    this.onStoreTap,
   });
 
   @override
@@ -1367,6 +1372,29 @@ void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offs
       bounds['maxY']!,
     );
     canvas.drawRect(rect, paint);
+
+    // 绘制高亮区域
+    if (highlightedAreas.isNotEmpty) {
+      final highlightPaint = Paint()
+        ..color = const Color.fromARGB(100, 0, 100, 255) // 半透明蓝色
+        ..style = PaintingStyle.fill;
+
+      for (var area in WalkableAreaData.areas) {
+        if (area.floor == floor && highlightedAreas.contains(area.id)) {
+          for (var polygon in area.coordinates) {
+            final path = Path();
+            if (polygon.isNotEmpty) {
+              path.moveTo(polygon[0].x, polygon[0].y);
+              for (int i = 1; i < polygon.length; i++) {
+                path.lineTo(polygon[i].x, polygon[i].y);
+              }
+              path.close();
+              canvas.drawPath(path, highlightPaint);
+            }
+          }
+        }
+      }
+    }
   }
 
   void _drawBarriers(Canvas canvas) {
@@ -1536,7 +1564,8 @@ class _HomePageState extends State<HomePage> {
   String selectedFloor = 'F1';
   bool isFullScreen = false;
   final List<String> floors = ['F6', 'F5', 'F4', 'F3', 'F2', 'F1', 'B1', 'B2'];
-
+  Store? selectedStore; // 选中的店铺
+  List<String> highlightedAreas = []; // 高亮区域列表
 
   // 添加这两个变量来跟踪缩放和平移
   double _currentScale = 1.0;
@@ -1558,12 +1587,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onTransformationChanged() {
-  final Matrix4 matrix = _transformationController.value;
-  final double scale = matrix.getMaxScaleOnAxis();
+  final matrix = _transformationController.value;
+  // 移除类型转换，直接使用matrix对象
   // 增加阈值，减少更新频率
-  if ((_currentScale - scale).abs() > 0.3) { 
+  if ((_currentScale - 1.0).abs() > 0.3) { 
     setState(() {
-      _currentScale = scale;
+      _currentScale = 1.0;
     });
   }
 }
@@ -1621,6 +1650,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
+              if (selectedStore != null) _buildStoreInfo(),
               _buildBottomNavigation(),
             ],
           ),
@@ -1870,25 +1900,44 @@ Widget _buildMapArea() {
             double mapHeight = containerHeight;
             double mapWidth = mapHeight * mapAspectRatio;
             
-            return InteractiveViewer(
-              minScale: 1.0,
-              maxScale: 3.0,
-              boundaryMargin: EdgeInsets.zero,
-              panEnabled: true,
-              scaleEnabled: true,
-              constrained: false,
-              child: Container(
-                width: mapWidth,
-                height: mapHeight,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue, width: 2),
-                ),
-                child: CustomPaint(
-                  painter: MapPainter(
-                    floor: _getFloorNumber(selectedFloor),
-                    scale: _currentScale,
+            return GestureDetector(
+              onTapUp: (details) {
+                // 处理地图点击事件
+                _handleMapTap(details.localPosition, mapWidth, mapHeight, containerWidth, containerHeight);
+              },
+              child: InteractiveViewer(
+                minScale: 1.0,
+                maxScale: 3.0,
+                boundaryMargin: EdgeInsets.zero,
+                panEnabled: true,
+                scaleEnabled: true,
+                constrained: false,
+                child: Container(
+                  width: mapWidth,
+                  height: mapHeight,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.blue, width: 2),
                   ),
-                  size: Size(mapWidth, mapHeight),
+                  child: CustomPaint(
+                    painter: MapPainter(
+                      floor: _getFloorNumber(selectedFloor),
+                      scale: _currentScale,
+                      highlightedAreas: highlightedAreas,
+                      onStoreTap: (store) {
+                        setState(() {
+                          selectedStore = store;
+                          // 获取店铺所在的可行走区域
+                          final areaId = WalkableAreaData.findNearestWalkableArea(store.id);
+                          if (areaId != null) {
+                            highlightedAreas = [areaId];
+                          } else {
+                            highlightedAreas = [];
+                          }
+                        });
+                      },
+                    ),
+                    size: Size(mapWidth, mapHeight),
+                  ),
                 ),
               ),
             );
@@ -2031,11 +2080,234 @@ Widget _buildMapArea() {
     });
   }
 
+  // 处理地图点击事件
+  void _handleMapTap(Offset localPosition, double mapWidth, double mapHeight, double containerWidth, double containerHeight) {
+    // 计算地图边界
+    final bounds = _calculateMapBounds();
+    final boundsWidth = bounds['maxX']! - bounds['minX']!;
+    final boundsHeight = bounds['maxY']! - bounds['minY']!;
+    
+    // 计算缩放比例
+    final scaleX = mapWidth / boundsWidth;
+    final scaleY = mapHeight / boundsHeight;
+    final mapScale = math.min(scaleX, scaleY);
+    
+    // 获取InteractiveViewer的变换矩阵
+    final matrix = _transformationController.value;
+    
+    // 应用变换矩阵的逆矩阵来转换点击坐标
+    final double translateX = matrix[12];
+    final double translateY = matrix[13];
+    final double scale = matrix[0]; // 假设x和y方向的缩放相同
+    
+    // 转换为地图坐标系中的点 (考虑InteractiveViewer的变换)
+    final double transformedX = (localPosition.dx - translateX) / scale;
+    final double transformedY = (localPosition.dy - translateY) / scale;
+    
+    // 转换为地图坐标
+    final mapX = transformedX / mapScale + bounds['minX']!;
+    final mapY = transformedY / mapScale + bounds['minY']!;
+    
+    // 检查是否点击了某个店铺
+    _checkStoreTap(Point(mapX, mapY));
+  }
+  
+  // 计算地图边界
+  Map<String, double> _calculateMapBounds() {
+    double minX = double.infinity;
+    double maxX = double.negativeInfinity;
+    double minY = double.infinity;
+    double maxY = double.negativeInfinity;
+
+    // 计算所有特征的边界
+    for (var barrier in GeoJsonData.barriers) {
+      if (barrier.floor == _getFloorNumber(selectedFloor)) {
+        for (var polygon in barrier.coordinates) {
+          for (var ring in polygon) {
+            for (var point in ring) {
+              minX = math.min(minX, point.x);
+              maxX = math.max(maxX, point.x);
+              minY = math.min(minY, point.y);
+              maxY = math.max(maxY, point.y);
+            }
+          }
+        }
+      }
+    }
+
+    for (var store in GeoJsonData.stores) {
+      if (store.floor == _getFloorNumber(selectedFloor)) {
+        for (var polygon in store.coordinates) {
+          for (var ring in polygon) {
+            for (var point in ring) {
+              minX = math.min(minX, point.x);
+              maxX = math.max(maxX, point.x);
+              minY = math.min(minY, point.y);
+              maxY = math.max(maxY, point.y);
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      'minX': minX,
+      'maxX': maxX,
+      'minY': minY,
+      'maxY': maxY,
+    };
+  }
+  
+  // 检查是否点击了店铺
+  void _checkStoreTap(Point tapPoint) {
+    Store? newSelectedStore;
+    String? newHighlightedAreaId;
+    
+    for (var geoStore in GeoJsonData.stores) {
+      if (geoStore.floor == _getFloorNumber(selectedFloor) && geoStore.name != null && geoStore.name!.isNotEmpty) {
+        // 检查点击点是否在店铺多边形内
+        bool isInside = false;
+        for (var polygon in geoStore.coordinates) {
+          for (var ring in polygon) {
+            if (WalkableAreaData.isPointInPolygon(tapPoint, ring)) {
+              isInside = true;
+              break;
+            }
+          }
+          if (isInside) break;
+        }
+        
+        if (isInside) {
+          // 创建Store对象
+          newSelectedStore = Store(
+            id: geoStore.id,
+            name: geoStore.name ?? '',
+            floor: geoStore.floor,
+            type: geoStore.type,
+            location: _calculatePolygonCenter(geoStore.coordinates),
+          );
+          // 获取店铺所在的可行走区域
+          newHighlightedAreaId = WalkableAreaData.findNearestWalkableArea(geoStore.id);
+          break;
+        }
+      }
+    }
+    
+    // 更新状态
+    setState(() {
+      selectedStore = newSelectedStore;
+      if (newHighlightedAreaId != null) {
+        highlightedAreas = [newHighlightedAreaId];
+      } else {
+        highlightedAreas = [];
+      }
+    });
+  }
+
+  // 计算多边形中心点
+  Point? _calculatePolygonCenter(List<List<List<Point>>> coordinates) {
+    double totalX = 0;
+    double totalY = 0;
+    int pointCount = 0;
+
+    for (var polygon in coordinates) {
+      for (var ring in polygon) {
+        for (var point in ring) {
+          totalX += point.x;
+          totalY += point.y;
+          pointCount++;
+        }
+      }
+    }
+
+    if (pointCount == 0) return null;
+    return Point(totalX / pointCount, totalY / pointCount);
+  }
+
   // 退出全屏模式
   void _exitFullScreen() {
     setState(() {
       isFullScreen = false;
     });
+  }
+
+  // 构建店铺信息显示区域
+  Widget _buildStoreInfo() {
+    if (selectedStore == null) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  selectedStore!.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedStore = null;
+                    highlightedAreas = [];
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${selectedStore!.floor}楼 · 编号: ${selectedStore!.id}',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (highlightedAreas.isNotEmpty)
+            Text(
+              '最近可行走区域: ${highlightedAreas.first}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.blue,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
