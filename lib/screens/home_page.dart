@@ -120,7 +120,7 @@ Widget _buildFloorNavigation() {
     left: 16,
     top: 20,
     child: Container(
-      width: 45, // 缩小宽度
+      width: 45, 
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(12),
@@ -135,7 +135,7 @@ Widget _buildFloorNavigation() {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 指南针图标 - 缩小
+          // 指南针图标 
           Container(
             margin: const EdgeInsets.all(6),
             padding: const EdgeInsets.all(6),
@@ -146,13 +146,13 @@ Widget _buildFloorNavigation() {
             child: const Icon(
               Icons.navigation,
               color: Colors.white,
-              size: 16, // 缩小图标
+              size: 16,
             ),
           ),
           
-          // 楼层按钮 - 缩小版本
+          // 楼层按钮
           Container(
-            constraints: const BoxConstraints(maxHeight: 320), // 减小高度
+            constraints: const BoxConstraints(maxHeight: 320), 
             child: ListView.builder(
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -169,7 +169,7 @@ Widget _buildFloorNavigation() {
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 3),
-                    padding: const EdgeInsets.symmetric(vertical: 6), // 减小padding
+                    padding: const EdgeInsets.symmetric(vertical: 6), 
                     decoration: BoxDecoration(
                       color: isSelected ? Colors.blue : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
@@ -182,7 +182,7 @@ Widget _buildFloorNavigation() {
                       floor,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 11, // 缩小字体
+                        fontSize: 11, 
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected ? Colors.white : Colors.black,
                       ),
@@ -203,7 +203,7 @@ Widget _buildFloorNavigation() {
   // 底部导航栏
 Widget _buildBottomNavigation() {
   return Container(
-    margin: const EdgeInsets.all(12), // 减小margin
+    margin: const EdgeInsets.all(12), 
     padding: const EdgeInsets.symmetric(vertical: 12), 
     decoration: BoxDecoration(
       color: Colors.white.withOpacity(0.9),
@@ -230,7 +230,7 @@ Widget _buildBottomNavigation() {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(6), // 减小padding
+          padding: const EdgeInsets.all(6), 
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.1),
             shape: BoxShape.circle,
@@ -238,14 +238,14 @@ Widget _buildBottomNavigation() {
           child: Icon(
             icon,
             color: iconColor,
-            size: 18, // 缩小图标
+            size: 18, 
           ),
         ),
         const SizedBox(height: 3),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 9, // 缩小字体
+            fontSize: 9, 
             color: Colors.black,
           ),
         ),
@@ -270,7 +270,7 @@ Widget _buildSearchBar() {
           child: const Icon(
             Icons.search,
             color: Colors.white,
-            size: 20, // 缩小图标
+            size: 20, 
           ),
         ),
         const SizedBox(width: 8), 
@@ -287,27 +287,27 @@ Widget _buildSearchBar() {
               );
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // 减小padding
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20), // 稍微减小圆角
+                borderRadius: BorderRadius.circular(20), 
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.edit, color: Colors.grey, size: 18), // 缩小图标
+                  const Icon(Icons.edit, color: Colors.grey, size: 18), 
                   const SizedBox(width: 6),
                   const Expanded(
                     child: Text(
                       'Search...',
                       style: TextStyle(
                         color: Colors.grey,
-                        fontSize: 14, // 缩小字体
+                        fontSize: 14, 
                       ),
                     ),
                   ),
-                  const Icon(Icons.camera_alt, color: Colors.grey, size: 18), // 缩小图标
+                  const Icon(Icons.camera_alt, color: Colors.grey, size: 18), 
                   const SizedBox(width: 6),
-                  const Icon(Icons.mic, color: Colors.grey, size: 18), // 缩小图标
+                  const Icon(Icons.mic, color: Colors.grey, size: 18), 
                 ],
               ),
             ),
