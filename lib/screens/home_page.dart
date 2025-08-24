@@ -15,6 +15,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
+
 class _HomePageState extends State<HomePage> {
   String selectedFloor = 'F1';
   bool isFullScreen = false;
@@ -375,71 +377,78 @@ class _HomePageState extends State<HomePage> {
 
   // 地图区域 
   Widget _buildMapArea() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8), // 添加左右边距
-      child: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double containerHeight = constraints.maxHeight;
-            double containerWidth = constraints.maxWidth;
-            
-            double mapAspectRatio = 2.0 / 1.0;
-            double mapHeight = containerHeight;
-            double mapWidth = mapHeight * mapAspectRatio;
-            
-            return Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),  // 降低透明度
-                    blurRadius: 8,  // 减少模糊范围
-                    spreadRadius: 0,  // 减少扩散
-                    offset: const Offset(0, 4),  // 减少偏移
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    child: SizedBox(
+      width: double.infinity,
+      height: double.infinity,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          double containerHeight = constraints.maxHeight;
+          double mapAspectRatio = 2.0 / 1.0;
+          double mapHeight = containerHeight;
+          double mapWidth = mapHeight * mapAspectRatio;
+          
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.3),
+                  blurRadius: 5,
+                  spreadRadius: -2,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+                minScale: 1.0,
+                maxScale: 3.0,
+                boundaryMargin: EdgeInsets.zero,
+                panEnabled: true,
+                scaleEnabled: true,
+                constrained: false,
+                onInteractionUpdate: (details) {
+                  // 获取当前缩放值
+                  setState(() {
+                    _currentScale = _transformationController.value.getMaxScaleOnAxis();
+                  });
+                },
+                child: Container(
+                  width: mapWidth,
+                  height: mapHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.3),
-                    blurRadius: 5,  // 减少模糊范围
-                    spreadRadius: -2,  // 减少扩散
-                    offset: const Offset(0, -2),  // 减少偏移
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: InteractiveViewer(
-                  minScale: 1.0,
-                  maxScale: 3.0,
-                  boundaryMargin: EdgeInsets.zero,
-                  panEnabled: true,
-                  scaleEnabled: true,
-                  constrained: false,
-                  child: Container(
-                    width: mapWidth,
-                    height: mapHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2),
-                      borderRadius: BorderRadius.circular(20),
+                  child: CustomPaint(
+                    painter: MapPainter(
+                      floor: _getFloorNumber(selectedFloor),
+                      scale: 1.0,
+                      viewerScale: _currentScale, // 传递 InteractiveViewer 的缩放值
                     ),
-                    child: CustomPaint(
-                      painter: MapPainter(
-                        floor: _getFloorNumber(selectedFloor),
-                        scale: _currentScale,
-                      ),
-                      size: Size(mapWidth, mapHeight),
-                    ),
+                    size: Size(mapWidth, mapHeight),
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   // 右侧功能按钮
   Widget _buildRightSideButtons() {

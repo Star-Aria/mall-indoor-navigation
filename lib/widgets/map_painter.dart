@@ -1,3 +1,4 @@
+// 新的 map_painter.dart - 使用简单的反向缩放方法
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:ui' show PointMode, Path, Canvas, Offset, Size, Rect, RRect, Radius, PathFillType, TileMode, Gradient, Color, TextDirection, Image, Vertices, BlendMode, FilterQuality, StrokeCap, StrokeJoin, PaintingStyle, TextAlign, TextBaseline, TextBox, Shadow, MaskFilter, ColorFilter, ImageFilter, Shader, Paint, TextStyle, TextPainter;
@@ -11,15 +12,17 @@ class MapPainter extends CustomPainter {
   final int floor;
   final double scale;
   final Offset offset;
-  final List<String> highlightedAreas; // 添加高亮区域参数
-  final Function(Store)? onStoreTap; // 添加店铺点击回调
+  final List<String> highlightedAreas;
+  final Function(Store)? onStoreTap;
+  final double viewerScale; // 添加 InteractiveViewer 的缩放值
 
   MapPainter({
     required this.floor,
     this.scale = 1.0,
     this.offset = Offset.zero,
-    this.highlightedAreas = const [], // 初始化高亮区域
+    this.highlightedAreas = const [],
     this.onStoreTap,
+    this.viewerScale = 1.0, // InteractiveViewer 的缩放值
   });
 
   @override
@@ -32,7 +35,7 @@ class MapPainter extends CustomPainter {
     // 计算缩放比例，使地图高度撑满容器
     final scaleX = size.width / boundsWidth;
     final scaleY = size.height / boundsHeight;
-    final mapScale = scaleY * scale; // 使用高度作为基准，让地图高度填满容器
+    final mapScale = scaleY * scale; // 使用高度作为基准
     
     final centerX = size.width / 2;
     final centerY = size.height / 2;
@@ -54,25 +57,40 @@ class MapPainter extends CustomPainter {
     // 绘制商店
     _drawStores(canvas);
     
-    // 智能绘制商店标签
-    _drawStoreLabelsIntelligent(canvas, size, mapScale, offset);
+    // 绘制标签（使用反向缩放）
+    _drawStoreLabels(canvas, mapScale);
     
     canvas.restore();
   }
 
-  void _drawStoreLabelsIntelligent(Canvas canvas, Size size, double mapScale, Offset offset) {
+  void _drawStoreLabels(Canvas canvas, double mapScale) {
+    // 计算反向缩放因子，使标签保持固定大小
+    // 总缩放 = mapScale * viewerScale
+    // 要保持固定大小，需要除以总缩放
+    final totalScale = mapScale * viewerScale;
+    final labelScale = 1.0 / totalScale;
+    
     for (var store in GeoJsonData.stores) {
       if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
         // 计算商店中心点
         Point? center = _calculatePolygonCenter(store.coordinates);
         if (center != null) {
+          // 保存当前画布状态
+          canvas.save();
+          
+          // 移动到标签位置
+          canvas.translate(center.x, center.y);
+          
+          // 应用反向缩放，使标签保持固定大小
+          canvas.scale(labelScale);
+          
           // 绘制商店名称
           final textPainter = TextPainter(
             text: TextSpan(
               text: store.name,
               style: const TextStyle(
                 color: Colors.black87,
-                fontSize: 12.0,
+                fontSize: 12.0, // 固定字体大小
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -80,30 +98,51 @@ class MapPainter extends CustomPainter {
           );
           textPainter.layout();
           
+          // 计算文本偏移（居中）
           final textOffset = Offset(
-            center.x - textPainter.width / 2,
-            center.y - textPainter.height / 2,
+            -textPainter.width / 2,
+            -textPainter.height / 2,
           );
           
           // 绘制文字背景
           final bgPaint = Paint()
-            ..color = Colors.white.withOpacity(0.8)
+            ..color = Colors.white.withOpacity(0.9)
             ..style = PaintingStyle.fill;
           
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(
-                textOffset.dx - 2,
-                textOffset.dy - 1,
-                textPainter.width + 4,
-                textPainter.height + 2,
-              ),
-              const Radius.circular(2),
+          // 背景边框
+          final borderPaint = Paint()
+            ..color = Colors.grey.withOpacity(0.3)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 0.5;
+          
+          final bgRect = RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              textOffset.dx - 3,
+              textOffset.dy - 2,
+              textPainter.width + 6,
+              textPainter.height + 4,
             ),
-            bgPaint,
+            const Radius.circular(3),
           );
           
+          // 添加阴影效果
+          final shadowPaint = Paint()
+            ..color = Colors.black.withOpacity(0.1)
+            ..style = PaintingStyle.fill
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+          
+          canvas.drawRRect(
+            bgRect.shift(const Offset(0, 1)),
+            shadowPaint,
+          );
+          canvas.drawRRect(bgRect, bgPaint);
+          canvas.drawRRect(bgRect, borderPaint);
+          
+          // 绘制文本
           textPainter.paint(canvas, textOffset);
+          
+          // 恢复画布状态
+          canvas.restore();
         }
       }
     }
@@ -252,55 +291,6 @@ class MapPainter extends CustomPainter {
     }
   }
 
-  void _drawStoreLabels(Canvas canvas, double currentScale) {
-    for (var store in GeoJsonData.stores) {
-      if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
-        // 计算商店中心点
-        Point? center = _calculatePolygonCenter(store.coordinates);
-        if (center != null) {
-          // 绘制商店名称
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: store.name,
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: math.max(8.0, 12.0 / currentScale),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          );
-          textPainter.layout();
-          
-          final textOffset = Offset(
-            center.x - textPainter.width / 2,
-            center.y - textPainter.height / 2,
-          );
-          
-          // 绘制文字背景
-          final bgPaint = Paint()
-            ..color = Colors.white.withOpacity(0.8)
-            ..style = PaintingStyle.fill;
-          
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(
-                textOffset.dx - 2,
-                textOffset.dy - 1,
-                textPainter.width + 4,
-                textPainter.height + 2,
-              ),
-              const Radius.circular(2),
-            ),
-            bgPaint,
-          );
-          
-          textPainter.paint(canvas, textOffset);
-        }
-      }
-    }
-  }
-
   Point? _calculatePolygonCenter(List<List<List<Point>>> coordinates) {
     double totalX = 0;
     double totalY = 0;
@@ -321,7 +311,11 @@ class MapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+  bool shouldRepaint(covariant MapPainter oldDelegate) {
+    return oldDelegate.floor != floor ||
+           oldDelegate.scale != scale ||
+           oldDelegate.offset != offset ||
+           oldDelegate.viewerScale != viewerScale ||
+           oldDelegate.highlightedAreas != highlightedAreas;
   }
 }
