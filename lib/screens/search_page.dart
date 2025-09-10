@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/store.dart';
 import '../models/walkable_area.dart';
-
+import 'home_page.dart'; 
 
 // 搜索页面
 class SearchPage extends StatefulWidget {
@@ -267,11 +267,16 @@ Widget _buildSearchResults() {
                           color: Colors.white,
                         ),
                         onTap: () {
-                          final areaText = nearestArea != null ? ' (最近区域: $nearestArea)' : '';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('选择了店铺: ${store.name} (${store.id})$areaText'),
+                          // 使用 pushAndRemoveUntil 确保正确的导航栈
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(
+                                targetStore: store,
+                                targetFloor: store.floor,
+                              ),
                             ),
+                            (route) => false,  // 清除所有之前的路由
                           );
                         },
                       ),

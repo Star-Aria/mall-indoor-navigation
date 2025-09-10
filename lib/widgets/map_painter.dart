@@ -15,6 +15,7 @@ class MapPainter extends CustomPainter {
   final List<String> highlightedAreas;
   final Function(Store)? onStoreTap;
   final double viewerScale; // 添加 InteractiveViewer 的缩放值
+  final String? selectedStoreId;  // 添加选中店铺ID
 
   MapPainter({
     required this.floor,
@@ -23,6 +24,7 @@ class MapPainter extends CustomPainter {
     this.highlightedAreas = const [],
     this.onStoreTap,
     this.viewerScale = 1.0, // InteractiveViewer 的缩放值
+    this.selectedStoreId,  // 添加参数
   });
 
   @override
@@ -63,6 +65,25 @@ class MapPainter extends CustomPainter {
     canvas.restore();
   }
 
+  Point? _calculatePolygonCenter(List<List<List<Point>>> coordinates) {
+  double totalX = 0;
+  double totalY = 0;
+  int pointCount = 0;
+
+  for (var polygon in coordinates) {
+    for (var ring in polygon) {
+      for (var point in ring) {
+        totalX += point.x;
+        totalY += point.y;
+        pointCount++;
+      }
+    }
+  }
+
+  if (pointCount == 0) return null;
+  return Point(totalX / pointCount, totalY / pointCount);
+}
+
   void _drawStoreLabels(Canvas canvas, double mapScale) {
     // 计算反向缩放因子，使标签保持固定大小
     // 总缩放 = mapScale * viewerScale
@@ -84,59 +105,55 @@ class MapPainter extends CustomPainter {
           // 应用反向缩放，使标签保持固定大小
           canvas.scale(labelScale);
           
-          // 绘制商店名称
+          // 1. 先绘制图标（购物袋图标）
+          _drawStoreIcon(canvas);
+          
+          // 2. 再绘制商店名称（在图标右侧，确保在图标之上）
           final textPainter = TextPainter(
             text: TextSpan(
               text: store.name,
               style: const TextStyle(
                 color: Colors.black87,
-                fontSize: 12.0, // 固定字体大小
-                fontWeight: FontWeight.bold,
+                fontSize: 11.0, // 稍微减小字体
+                fontWeight: FontWeight.w600,
               ),
             ),
             textDirection: TextDirection.ltr,
           );
           textPainter.layout();
           
-          // 计算文本偏移（居中）
+          // 文本位置：图标右侧
           final textOffset = Offset(
-            -textPainter.width / 2,
+            15, // 图标右侧15像素
             -textPainter.height / 2,
           );
           
           // 绘制文字背景
           final bgPaint = Paint()
-            ..color = Colors.white.withOpacity(0.9)
+            ..color = Colors.white.withOpacity(0.95)
             ..style = PaintingStyle.fill;
-          
-          // 背景边框
-          final borderPaint = Paint()
-            ..color = Colors.grey.withOpacity(0.3)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.5;
           
           final bgRect = RRect.fromRectAndRadius(
             Rect.fromLTWH(
-              textOffset.dx - 3,
-              textOffset.dy - 2,
-              textPainter.width + 6,
-              textPainter.height + 4,
+              textOffset.dx - 2,
+              textOffset.dy - 1,
+              textPainter.width + 4,
+              textPainter.height + 2,
             ),
-            const Radius.circular(3),
+            const Radius.circular(2),
           );
           
-          // 添加阴影效果
+          // 添加阴影
           final shadowPaint = Paint()
             ..color = Colors.black.withOpacity(0.1)
             ..style = PaintingStyle.fill
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
           
           canvas.drawRRect(
-            bgRect.shift(const Offset(0, 1)),
+            bgRect.shift(const Offset(0, 0.5)),
             shadowPaint,
           );
           canvas.drawRRect(bgRect, bgPaint);
-          canvas.drawRRect(bgRect, borderPaint);
           
           // 绘制文本
           textPainter.paint(canvas, textOffset);
@@ -146,6 +163,88 @@ class MapPainter extends CustomPainter {
         }
       }
     }
+  }
+  
+  void _drawStoreIcon(Canvas canvas) {
+    // 图标颜色
+    final bgPaint = Paint()
+      ..color = const Color(0xffF5F5DC)
+      //..color = const Color.fromARGB(255, 184, 254, 255)
+      ..style = PaintingStyle.fill;
+    
+    final borderPaint = Paint()
+      ..color = const Color.fromARGB(255, 255, 255, 255)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    
+    // 创建水滴形状的路径
+    final dropPath = Path();
+    
+    const radius = 10.0;
+    const centerY = -3.0;
+    
+    // 从顶部开始，顺时针绘制
+    dropPath.moveTo(0, centerY - radius);
+    
+    // 右半圆
+    dropPath.arcTo(
+      Rect.fromCircle(center: Offset(0, centerY), radius: radius),
+      -math.pi / 2,  // 起始角度（顶部）
+      math.pi * 0.8, // 扫过的角度
+      false,
+    );
+    
+    // 右侧到尖角
+    dropPath.lineTo(0, centerY + radius + 5); // 尖端点
+    
+    // 尖角到左侧
+    dropPath.lineTo(-radius * 0.6, centerY + radius * 0.6);
+    
+    // 左半圆
+    dropPath.arcTo(
+      Rect.fromCircle(center: Offset(0, centerY), radius: radius),
+      math.pi * 0.7,  // 起始角度
+      math.pi * 0.8,  // 扫过的角度
+      false,
+    );
+    
+    dropPath.close();
+    
+    // 绘制填充的水滴形状
+    canvas.drawPath(dropPath, bgPaint);
+    
+    // 绘制边框
+    canvas.drawPath(dropPath, borderPaint);
+    
+    // 绘制内部的购物袋图标
+    final iconPaint = Paint()
+      ..color = const Color.fromARGB(255, 9, 26, 128)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    
+    // 购物袋轮廓
+    final bagOutline = Path();
+    bagOutline.moveTo(-4, centerY);
+    bagOutline.lineTo(-4, centerY + 5);
+    bagOutline.lineTo(4, centerY + 5);
+    bagOutline.lineTo(4, centerY);
+    bagOutline.close();
+    
+    canvas.drawPath(bagOutline, iconPaint);
+    
+    // 购物袋把手（两个分开的弧形）
+    final leftHandle = Path();
+    leftHandle.moveTo(-2, centerY);
+    leftHandle.quadraticBezierTo(-2, centerY - 3, 0, centerY - 3);
+    
+    final rightHandle = Path();
+    rightHandle.moveTo(2, centerY);
+    rightHandle.quadraticBezierTo(2, centerY - 3, 0, centerY - 3);
+    
+    canvas.drawPath(leftHandle, iconPaint);
+    canvas.drawPath(rightHandle, iconPaint);
   }
 
   Map<String, double> _calculateBounds() {
@@ -261,6 +360,7 @@ class MapPainter extends CustomPainter {
     }
   }
 
+  // 修改 _drawStores 方法以高亮显示选中的店铺
   void _drawStores(Canvas canvas) {
     final paint = Paint()
       ..color = const Color.fromARGB(255, 132, 194, 244)
@@ -270,9 +370,20 @@ class MapPainter extends CustomPainter {
       ..color = Colors.blue.shade800
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
+      
+    final selectedPaint = Paint()
+      ..color = Colors.orange.withOpacity(0.8)  // 选中店铺的颜色
+      ..style = PaintingStyle.fill;
+      
+    final selectedStrokePaint = Paint()
+      ..color = Colors.orange.shade900
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
     for (var store in GeoJsonData.stores) {
       if (store.floor == floor) {
+        bool isSelected = store.id == selectedStoreId;
+        
         for (var polygon in store.coordinates) {
           for (var ring in polygon) {
             final path = Path();
@@ -282,32 +393,20 @@ class MapPainter extends CustomPainter {
                 path.lineTo(ring[i].x, ring[i].y);
               }
               path.close();
-              canvas.drawPath(path, paint);
-              canvas.drawPath(path, strokePaint);
+              
+              // 使用不同的颜色绘制选中的店铺
+              if (isSelected) {
+                canvas.drawPath(path, selectedPaint);
+                canvas.drawPath(path, selectedStrokePaint);
+              } else {
+                canvas.drawPath(path, paint);
+                canvas.drawPath(path, strokePaint);
+              }
             }
           }
         }
       }
     }
-  }
-
-  Point? _calculatePolygonCenter(List<List<List<Point>>> coordinates) {
-    double totalX = 0;
-    double totalY = 0;
-    int pointCount = 0;
-
-    for (var polygon in coordinates) {
-      for (var ring in polygon) {
-        for (var point in ring) {
-          totalX += point.x;
-          totalY += point.y;
-          pointCount++;
-        }
-      }
-    }
-
-    if (pointCount == 0) return null;
-    return Point(totalX / pointCount, totalY / pointCount);
   }
 
   @override
@@ -316,6 +415,8 @@ class MapPainter extends CustomPainter {
            oldDelegate.scale != scale ||
            oldDelegate.offset != offset ||
            oldDelegate.viewerScale != viewerScale ||
-           oldDelegate.highlightedAreas != highlightedAreas;
+           oldDelegate.highlightedAreas != highlightedAreas ||
+           oldDelegate.selectedStoreId != selectedStoreId;  // 添加判断
   }
+
 }
