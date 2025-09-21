@@ -16,6 +16,7 @@ class MapPainter extends CustomPainter {
   final Function(Store)? onStoreTap;
   final double viewerScale; // 添加 InteractiveViewer 的缩放值
   final String? selectedStoreId;  // 添加选中店铺ID
+  final bool isLandscape;  // 添加横屏标识
 
   MapPainter({
     required this.floor,
@@ -25,6 +26,7 @@ class MapPainter extends CustomPainter {
     this.onStoreTap,
     this.viewerScale = 1.0, // InteractiveViewer 的缩放值
     this.selectedStoreId,  // 添加参数
+    this.isLandscape = false,  // 默认竖屏
   });
 
   @override
@@ -92,30 +94,30 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
   final totalScale = mapScale * viewerScale;
   final labelScale = 1.0 / totalScale;
   
+  // 横屏模式下进一步缩小标签
+  final adjustedLabelScale = isLandscape ? labelScale * 0.85 : labelScale;
+
   for (var store in GeoJsonData.stores) {
     if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
-      // 计算商店中心点
       Point? center = _calculatePolygonCenter(store.coordinates);
       if (center != null) {
-        // 保存当前画布状态
         canvas.save();
         
-        // 移动到标签位置
         canvas.translate(center.x, center.y);
         
-        // 应用反向缩放，使标签保持固定大小
-        canvas.scale(labelScale);
+        // 应用调整后的缩放
+        canvas.scale(adjustedLabelScale);
         
-        // 1. 先绘制图标（根据类型绘制不同图标）
-        _drawStoreIcon(canvas, store.type);  // 传入店铺类型
+        // 1. 先绘制图标
+        _drawStoreIcon(canvas, store.type);
         
-        // 2. 再绘制商店名称（在图标右侧，确保在图标之上）
+        // 2. 再绘制商店名称
         final textPainter = TextPainter(
           text: TextSpan(
             text: store.name,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.black87,
-              fontSize: 11.0,
+              fontSize: isLandscape ? 9.0 : 11.0,  // 横屏时字体更小
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -123,13 +125,11 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
         );
         textPainter.layout();
         
-        // 文本位置：图标右侧
         final textOffset = Offset(
           15,
           -textPainter.height / 2,
         );
         
-        // 绘制文字背景
         final bgPaint = Paint()
           ..color = Colors.white.withOpacity(0.95)
           ..style = PaintingStyle.fill;
@@ -144,7 +144,6 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
           const Radius.circular(2),
         );
         
-        // 添加阴影
         final shadowPaint = Paint()
           ..color = Colors.black.withOpacity(0.1)
           ..style = PaintingStyle.fill
@@ -156,10 +155,8 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
         );
         canvas.drawRRect(bgRect, bgPaint);
         
-        // 绘制文本
         textPainter.paint(canvas, textOffset);
         
-        // 恢复画布状态
         canvas.restore();
       }
     }
@@ -501,11 +498,12 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
 
   @override
   bool shouldRepaint(covariant MapPainter oldDelegate) {
-    return oldDelegate.floor != floor ||
-           oldDelegate.scale != scale ||
-           oldDelegate.offset != offset ||
-           oldDelegate.viewerScale != viewerScale ||
-           oldDelegate.highlightedAreas != highlightedAreas ||
-           oldDelegate.selectedStoreId != selectedStoreId;  // 添加判断
+  return oldDelegate.floor != floor ||
+         oldDelegate.scale != scale ||
+         oldDelegate.offset != offset ||
+         oldDelegate.viewerScale != viewerScale ||
+         oldDelegate.highlightedAreas != highlightedAreas ||
+         oldDelegate.selectedStoreId != selectedStoreId ||
+         oldDelegate.isLandscape != isLandscape;  // 添加判断
   }
 }

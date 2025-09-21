@@ -33,12 +33,22 @@ class _HomePageState extends State<HomePage> {
   double _currentScale = 1.0;
   late TransformationController _transformationController;
   
+  late TransformationController _fullscreenController; // 添加横屏控制器
+  double _fullscreenScale = 1.0; // 添加横屏缩放值
+
+  void _onFullscreenTransformationChanged() {
+    setState(() {
+      _fullscreenScale = _fullscreenController.value.getMaxScaleOnAxis();
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _transformationController = TransformationController();
     _transformationController.addListener(_onTransformationChanged);
+    _fullscreenController = TransformationController(); // 初始化横屏控制器
+    _fullscreenController.addListener(_onFullscreenTransformationChanged); // 添加监听
     _loadAllData().then((_) {
       // 数据加载完成后，如果有目标店铺，则显示
       if (widget.targetStore != null && widget.targetFloor != null) {
@@ -168,6 +178,8 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _transformationController.removeListener(_onTransformationChanged);
     _transformationController.dispose();
+    _fullscreenController.removeListener(_onFullscreenTransformationChanged);
+    _fullscreenController.dispose(); // 释放横屏控制器
     super.dispose();
   }
 
@@ -870,7 +882,7 @@ Widget _buildFullScreenMap() {
           height: screenSize.height,
           color: Colors.white,
           child: InteractiveViewer(
-            transformationController: TransformationController(),
+            transformationController: _fullscreenController, // 使用成员变量
             minScale: 0.5,
             maxScale: 3.0,
             boundaryMargin: const EdgeInsets.all(0),
@@ -878,17 +890,17 @@ Widget _buildFullScreenMap() {
             scaleEnabled: true,
             child: Center(
               child: RotatedBox(
-                quarterTurns: 1,  // 旋转90度（使用RotatedBox替代Transform.rotate）
+                quarterTurns: 1,
                 child: SizedBox(
-                  width: screenSize.height * 2,  // 2:1比例
+                  width: screenSize.height * 2,
                   height: screenSize.height,
                   child: CustomPaint(
                     painter: MapPainter(
                       floor: _getFloorNumber(selectedFloor),
                       scale: 1.0,
-                      viewerScale: 1.0,
+                      viewerScale: _fullscreenScale, // 使用横屏缩放值
                       selectedStoreId: null,
-                      
+                      isLandscape: true,
                     ),
                   ),
                 ),
@@ -896,7 +908,6 @@ Widget _buildFullScreenMap() {
             ),
           ),
         ),
-        // 退出全屏按钮
         _buildExitFullScreenButton(),
       ],
     ),
