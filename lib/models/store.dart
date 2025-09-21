@@ -10,13 +10,15 @@ class Store {
   final String name;
   final int floor;
   final String type;
-  final Point? location; // 位置信息
+  final String type2;  // 新增：具体类型
+  final Point? location;
 
   Store({
     required this.id,
     required this.name,
     required this.floor,
     required this.type,
+    required this.type2,  // 新增参数
     this.location,
   });
 }
@@ -41,6 +43,7 @@ class StoreData {
         final String name = feature['properties']['name'] ?? '';
         final int floor = feature['properties']['floor'] ?? 1;
         final String type = feature['properties']['type'] ?? 'Store';
+        final String type2 = feature['properties']['type2'] ?? '';  // 新增：读取type2
         
         // 计算商店的中心点位置
         Point? location;
@@ -97,6 +100,7 @@ class StoreData {
           name: name,
           floor: floor,
           type: type,
+          type2: type2,  // 新增
           location: location,
         ));
       }

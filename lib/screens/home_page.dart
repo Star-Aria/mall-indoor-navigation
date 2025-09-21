@@ -286,7 +286,7 @@ Widget _buildStoreInfoCard() {
   return Positioned(
     left: 16,
     right: 16,
-    bottom: 16,  // 在底部导航栏上方
+    bottom: 16,
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(16),
@@ -346,49 +346,32 @@ Widget _buildStoreInfoCard() {
             ),
           ),
           Text(
-            '类型: ${selectedStore!.type}',
+            '类型: ${selectedStore!.type2}',  // 修改：显示type2而不是type
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: 实现导航功能
-                    print('导航到: ${selectedStore!.name}');
-                  },
-                  icon: const Icon(Icons.navigation, size: 16),
-                  label: const Text('导航'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+          // 修改：只保留导航按钮
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // TODO: 实现导航功能
+                print('导航到: ${selectedStore!.name}');
+              },
+              icon: const Icon(Icons.navigation, size: 16),
+              label: const Text('导航'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: 实现详情功能
-                    print('查看详情: ${selectedStore!.name}');
-                  },
-                  icon: const Icon(Icons.info_outline, size: 16),
-                  label: const Text('详情'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -648,6 +631,7 @@ Widget _buildStoreInfoCard() {
               name: geoStore.name ?? '未知店铺',
               floor: geoStore.floor,
               type: geoStore.type,
+              type2: '',
               location: _calculateStoreCenter(geoStore.coordinates),
             );
           }
@@ -874,95 +858,83 @@ Widget _buildStoreInfoCard() {
     );
   }
 
-  // 全屏地图
-  Widget _buildFullScreenMap() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: Colors.grey[100],
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          double containerHeight = constraints.maxHeight;
-          double containerWidth = constraints.maxWidth;
-          
-          double mapAspectRatio = 2.0 / 1.0;
-          double mapWidth = containerWidth;
-          double mapHeight = mapWidth * mapAspectRatio;
-          
-          return InteractiveViewer(
-            minScale: 1.0,
+// 全屏地图
+Widget _buildFullScreenMap() {
+  final screenSize = MediaQuery.of(context).size;
+  
+  return Scaffold(
+    body: Stack(
+      children: [
+        Container(
+          width: screenSize.width,
+          height: screenSize.height,
+          color: Colors.white,
+          child: InteractiveViewer(
+            transformationController: TransformationController(),
+            minScale: 0.5,
             maxScale: 3.0,
-            boundaryMargin: EdgeInsets.zero,
+            boundaryMargin: const EdgeInsets.all(0),
             panEnabled: true,
             scaleEnabled: true,
-            constrained: false,
-            child: SizedBox(
-              width: mapHeight,
-              height: mapHeight,
-              child: Transform.rotate(
-                angle: 1.5708,
-                child: Container(
-                  width: mapWidth,
-                  height: mapHeight,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.blue, width: 2),
-                  ),
-                  child: Image.asset(
-                    'assets/maps/$selectedFloor.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: Text(
-                            '👆👇 上下拖拽查看地图长边',
-                            style: TextStyle(color: Colors.blue[600]),
-                          ),
-                        ),
-                      );
-                    },
+            child: Center(
+              child: RotatedBox(
+                quarterTurns: 1,  // 旋转90度（使用RotatedBox替代Transform.rotate）
+                child: SizedBox(
+                  width: screenSize.height * 2,  // 2:1比例
+                  height: screenSize.height,
+                  child: CustomPaint(
+                    painter: MapPainter(
+                      floor: _getFloorNumber(selectedFloor),
+                      scale: 1.0,
+                      viewerScale: 1.0,
+                      selectedStoreId: null,
+                      
+                    ),
                   ),
                 ),
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  // 退出全屏按钮
-  Widget _buildExitFullScreenButton() {
-    return Positioned(
-      right: 16,
-      top: 50,
-      child: GestureDetector(
-        onTap: () {
-          _exitFullScreen();
-        },
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.fullscreen_exit,
-            color: Colors.white,
-            size: 24,
           ),
         ),
+        // 退出全屏按钮
+        _buildExitFullScreenButton(),
+      ],
+    ),
+  );
+}
+
+// 退出全屏按钮
+Widget _buildExitFullScreenButton() {
+  return Positioned(
+    right: 16,
+    top: 50,
+    child: GestureDetector(
+      onTap: () {
+        _exitFullScreen();
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.fullscreen_exit,
+          color: Colors.white,
+          size: 24,
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // 进入全屏模式
   void _enterFullScreen() {

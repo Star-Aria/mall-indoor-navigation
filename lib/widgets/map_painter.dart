@@ -87,159 +87,180 @@ class MapPainter extends CustomPainter {
     return Point(totalX / pointCount, totalY / pointCount);
   }
 
-  void _drawStoreLabels(Canvas canvas, double mapScale) {
-    // 计算反向缩放因子，使标签保持固定大小
-    // 总缩放 = mapScale * viewerScale
-    // 要保持固定大小，需要除以总缩放
-    final totalScale = mapScale * viewerScale;
-    final labelScale = 1.0 / totalScale;
-    
-    for (var store in GeoJsonData.stores) {
-      if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
-        // 计算商店中心点
-        Point? center = _calculatePolygonCenter(store.coordinates);
-        if (center != null) {
-          // 保存当前画布状态
-          canvas.save();
-          
-          // 移动到标签位置
-          canvas.translate(center.x, center.y);
-          
-          // 应用反向缩放，使标签保持固定大小
-          canvas.scale(labelScale);
-          
-          // 1. 先绘制图标（购物袋图标）
-          _drawStoreIcon(canvas);
-          
-          // 2. 再绘制商店名称（在图标右侧，确保在图标之上）
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: store.name,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 11.0, // 稍微减小字体
-                fontWeight: FontWeight.w600,
-              ),
+void _drawStoreLabels(Canvas canvas, double mapScale) {
+  // 计算反向缩放因子，使标签保持固定大小
+  final totalScale = mapScale * viewerScale;
+  final labelScale = 1.0 / totalScale;
+  
+  for (var store in GeoJsonData.stores) {
+    if (store.floor == floor && store.name != null && store.name!.isNotEmpty) {
+      // 计算商店中心点
+      Point? center = _calculatePolygonCenter(store.coordinates);
+      if (center != null) {
+        // 保存当前画布状态
+        canvas.save();
+        
+        // 移动到标签位置
+        canvas.translate(center.x, center.y);
+        
+        // 应用反向缩放，使标签保持固定大小
+        canvas.scale(labelScale);
+        
+        // 1. 先绘制图标（根据类型绘制不同图标）
+        _drawStoreIcon(canvas, store.type);  // 传入店铺类型
+        
+        // 2. 再绘制商店名称（在图标右侧，确保在图标之上）
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: store.name,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 11.0,
+              fontWeight: FontWeight.w600,
             ),
-            textDirection: TextDirection.ltr,
-          );
-          textPainter.layout();
-          
-          // 文本位置：图标右侧
-          final textOffset = Offset(
-            15, // 图标右侧15像素
-            -textPainter.height / 2,
-          );
-          
-          // 绘制文字背景
-          final bgPaint = Paint()
-            ..color = Colors.white.withOpacity(0.95)
-            ..style = PaintingStyle.fill;
-          
-          final bgRect = RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              textOffset.dx - 2,
-              textOffset.dy - 1,
-              textPainter.width + 4,
-              textPainter.height + 2,
-            ),
-            const Radius.circular(2),
-          );
-          
-          // 添加阴影
-          final shadowPaint = Paint()
-            ..color = Colors.black.withOpacity(0.1)
-            ..style = PaintingStyle.fill
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
-          
-          canvas.drawRRect(
-            bgRect.shift(const Offset(0, 0.5)),
-            shadowPaint,
-          );
-          canvas.drawRRect(bgRect, bgPaint);
-          
-          // 绘制文本
-          textPainter.paint(canvas, textOffset);
-          
-          // 恢复画布状态
-          canvas.restore();
-        }
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        
+        // 文本位置：图标右侧
+        final textOffset = Offset(
+          15,
+          -textPainter.height / 2,
+        );
+        
+        // 绘制文字背景
+        final bgPaint = Paint()
+          ..color = Colors.white.withOpacity(0.95)
+          ..style = PaintingStyle.fill;
+        
+        final bgRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            textOffset.dx - 2,
+            textOffset.dy - 1,
+            textPainter.width + 4,
+            textPainter.height + 2,
+          ),
+          const Radius.circular(2),
+        );
+        
+        // 添加阴影
+        final shadowPaint = Paint()
+          ..color = Colors.black.withOpacity(0.1)
+          ..style = PaintingStyle.fill
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+        
+        canvas.drawRRect(
+          bgRect.shift(const Offset(0, 0.5)),
+          shadowPaint,
+        );
+        canvas.drawRRect(bgRect, bgPaint);
+        
+        // 绘制文本
+        textPainter.paint(canvas, textOffset);
+        
+        // 恢复画布状态
+        canvas.restore();
       }
     }
   }
+}
+
+void _drawStoreIcon(Canvas canvas, String storeType) {
+  // 图标颜色
+  final bgPaint = Paint()
+    ..color = const Color.fromARGB(141, 255, 97, 179)
+    ..style = PaintingStyle.fill;
   
-  void _drawStoreIcon(Canvas canvas) {
-    // 图标颜色
-    final bgPaint = Paint()
-      ..color = const Color.fromARGB(141, 255, 97, 179)
-      ..style = PaintingStyle.fill;
-    
-    final borderPaint = Paint()
-      ..color = const Color.fromARGB(255, 255, 255, 255)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    
-    // 创建水滴形状的路径
-    final dropPath = Path();
-    
-    const radius = 10.0;
-    const centerY = -3.0;
-    
-    // 从顶部开始，顺时针绘制
-    dropPath.moveTo(0, centerY - radius);
-    
-    // 右半圆
-    dropPath.arcTo(
-      Rect.fromCircle(center: Offset(0, centerY), radius: radius),
-      -math.pi / 2,  // 起始角度（顶部）
-      math.pi * 0.8, // 扫过的角度
-      false,
-    );
-    
-    // 右侧到尖角
-    dropPath.lineTo(0, centerY + radius + 5); // 尖端点
-    
-    // 尖角到左侧
-    dropPath.lineTo(-radius * 0.6-2, centerY + radius * 0.6);
-    
-    // 左半圆
-    dropPath.arcTo(
-      Rect.fromCircle(center: Offset(0, centerY), radius: radius),
-      math.pi * 0.7,  // 起始角度
-      math.pi * 0.8,  // 扫过的角度
-      false,
-    );
-    
-    dropPath.close();
-    
-    // 绘制填充的水滴形状
-    canvas.drawPath(dropPath, bgPaint);
-    
-    // 绘制边框
-    canvas.drawPath(dropPath, borderPaint);
-    
-    // 使用Icons.shopping_bag图标
-    final iconPainter = TextPainter(
-      text: TextSpan(
-        text: String.fromCharCode(Icons.shopping_bag.codePoint),
-        style: TextStyle(
-          fontSize: 12.0,  
-          fontFamily: Icons.shopping_bag.fontFamily,
-          package: Icons.shopping_bag.fontPackage,
-          color: const Color.fromARGB(255, 255, 255, 255),  
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    
-    iconPainter.layout();
-    
-    // 绘制图标，居中对齐在水滴形状内
-    iconPainter.paint(
-      canvas,
-      Offset(-iconPainter.width / 2, centerY - iconPainter.height / 2),
-    );
+  final borderPaint = Paint()
+    ..color = const Color.fromARGB(255, 255, 255, 255)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  
+  // 创建水滴形状的路径
+  final dropPath = Path();
+  
+  const radius = 10.0;
+  const centerY = -3.0;
+  
+  // 从顶部开始，顺时针绘制
+  dropPath.moveTo(0, centerY - radius);
+  
+  // 右半圆
+  dropPath.arcTo(
+    Rect.fromCircle(center: Offset(0, centerY), radius: radius),
+    -math.pi / 2,
+    math.pi * 0.8,
+    false,
+  );
+  
+  // 右侧到尖角
+  dropPath.lineTo(0, centerY + radius + 5);
+  
+  // 尖角到左侧
+  dropPath.lineTo(-radius * 0.6-2, centerY + radius * 0.6);
+  
+  // 左半圆
+  dropPath.arcTo(
+    Rect.fromCircle(center: Offset(0, centerY), radius: radius),
+    math.pi * 0.7,
+    math.pi * 0.8,
+    false,
+  );
+  
+  dropPath.close();
+  
+  // 绘制填充的水滴形状
+  canvas.drawPath(dropPath, bgPaint);
+  
+  // 绘制边框
+  canvas.drawPath(dropPath, borderPaint);
+  
+  // 根据店铺类型选择不同的图标
+  IconData iconData;
+  double fontSize = 12.0;
+  
+  switch (storeType.toLowerCase()) {
+    case 'cosmetics':
+      // 使用face或palette图标代表化妆品
+      iconData = Icons.brush;
+      fontSize = 11.0;
+      break;
+    case 'food':
+      // 使用餐饮图标
+      iconData = Icons.restaurant;
+      fontSize = 12.0;
+      break;
+    case 'store':
+    default:
+      // 默认使用购物袋图标
+      iconData = Icons.shopping_bag;
+      fontSize = 12.0;
+      break;
   }
+  
+  // 使用TextPainter绘制对应的图标
+  final iconPainter = TextPainter(
+    text: TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: fontSize,
+        fontFamily: iconData.fontFamily,
+        package: iconData.fontPackage,
+        color: const Color.fromARGB(255, 255, 255, 255),
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+  
+  iconPainter.layout();
+  
+  // 绘制图标，居中对齐在水滴形状内
+  iconPainter.paint(
+    canvas,
+    Offset(-iconPainter.width / 2, centerY - iconPainter.height / 2),
+  );
+}
 
 
   // 添加绘制扶梯图标的方法
