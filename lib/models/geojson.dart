@@ -22,6 +22,7 @@ class GeoJsonFeature {
 class GeoJsonData {
   static List<GeoJsonFeature> barriers = [];
   static List<GeoJsonFeature> stores = [];
+  static List<GeoJsonFeature> escalators = [];
   static bool isLoaded = false;
 
   static Future<void> loadGeoJsonData() async {
@@ -76,6 +77,73 @@ class GeoJsonData {
           floor: feature['properties']['floor'],
           name: feature['properties']['name'],
           coordinates: [[ringPoints]], // 包装成MultiPolygon格式
+        ));
+      }
+      
+      // 加载Escalator数据
+      final escalatorString = await rootBundle.loadString('assets/geojson/Escalator.geojson');
+      final escalatorJson = json.decode(escalatorString);
+      
+      for (var feature in escalatorJson['features']) {
+        // 扶梯可能是Point、Polygon或MultiPolygon格式
+        final geometry = feature['geometry'];
+        List<List<List<Point>>> parsedCoords = [];
+        
+        if (geometry['type'] == 'Point') {
+          // 处理Point格式 - 创建一个小的方形区域表示扶梯
+          final coord = geometry['coordinates'] as List;
+          final centerX = coord[0].toDouble();
+          final centerY = -coord[1].toDouble(); // 修复上下颠倒
+          
+          // 创建一个10x10的方形区域
+          const size = 10.0;
+          List<Point> squarePoints = [
+            Point(centerX - size, centerY - size),
+            Point(centerX + size, centerY - size),
+            Point(centerX + size, centerY + size),
+            Point(centerX - size, centerY + size),
+            Point(centerX - size, centerY - size), // 闭合
+          ];
+          
+          parsedCoords.add([squarePoints]);
+        } else if (geometry['type'] == 'Polygon') {
+          // 处理Polygon格式
+          final coords = geometry['coordinates'] as List;
+          List<List<Point>> polygonRings = [];
+          for (var ring in coords) {
+            List<Point> ringPoints = [];
+            for (var coord in ring) {
+              // 修复上下颠倒：将Y坐标取负值
+              ringPoints.add(Point(coord[0].toDouble(), -coord[1].toDouble()));
+            }
+            polygonRings.add(ringPoints);
+          }
+          parsedCoords.add(polygonRings);
+        } else if (geometry['type'] == 'MultiPolygon') {
+          // 处理MultiPolygon格式
+          final coords = geometry['coordinates'] as List;
+          for (var polygon in coords) {
+            List<List<Point>> polygonRings = [];
+            for (var ring in polygon) {
+              List<Point> ringPoints = [];
+              for (var coord in ring) {
+                // 修复上下颠倒：将Y坐标取负值
+                ringPoints.add(Point(coord[0].toDouble(), -coord[1].toDouble()));
+              }
+              polygonRings.add(ringPoints);
+            }
+            parsedCoords.add(polygonRings);
+          }
+        }
+        
+        escalators.add(GeoJsonFeature(
+          id: feature['properties']['id'] ?? 'escalator_${escalators.length}',
+          type: feature['properties']['type'] ?? 'escalator',
+          floor: feature['properties']['floor'] is int 
+              ? feature['properties']['floor'] 
+              : int.parse(feature['properties']['floor'].toString()),
+          name: feature['properties']['name'],
+          coordinates: parsedCoords,
         ));
       }
       

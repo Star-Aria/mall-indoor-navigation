@@ -62,27 +62,30 @@ class MapPainter extends CustomPainter {
     // 绘制标签（使用反向缩放）
     _drawStoreLabels(canvas, mapScale);
     
+    // 绘制扶梯图标（使用反向缩放）
+    _drawEscalatorIcons(canvas, mapScale);
+    
     canvas.restore();
   }
 
   Point? _calculatePolygonCenter(List<List<List<Point>>> coordinates) {
-  double totalX = 0;
-  double totalY = 0;
-  int pointCount = 0;
+    double totalX = 0;
+    double totalY = 0;
+    int pointCount = 0;
 
-  for (var polygon in coordinates) {
-    for (var ring in polygon) {
-      for (var point in ring) {
-        totalX += point.x;
-        totalY += point.y;
-        pointCount++;
+    for (var polygon in coordinates) {
+      for (var ring in polygon) {
+        for (var point in ring) {
+          totalX += point.x;
+          totalY += point.y;
+          pointCount++;
+        }
       }
     }
-  }
 
-  if (pointCount == 0) return null;
-  return Point(totalX / pointCount, totalY / pointCount);
-}
+    if (pointCount == 0) return null;
+    return Point(totalX / pointCount, totalY / pointCount);
+  }
 
   void _drawStoreLabels(Canvas canvas, double mapScale) {
     // 计算反向缩放因子，使标签保持固定大小
@@ -168,14 +171,13 @@ class MapPainter extends CustomPainter {
   void _drawStoreIcon(Canvas canvas) {
     // 图标颜色
     final bgPaint = Paint()
-      ..color = const Color(0xffF5F5DC)
-      //..color = const Color.fromARGB(255, 184, 254, 255)
+      ..color = const Color.fromARGB(141, 255, 97, 179)
       ..style = PaintingStyle.fill;
     
     final borderPaint = Paint()
       ..color = const Color.fromARGB(255, 255, 255, 255)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 1.5;
     
     // 创建水滴形状的路径
     final dropPath = Path();
@@ -198,7 +200,7 @@ class MapPainter extends CustomPainter {
     dropPath.lineTo(0, centerY + radius + 5); // 尖端点
     
     // 尖角到左侧
-    dropPath.lineTo(-radius * 0.6, centerY + radius * 0.6);
+    dropPath.lineTo(-radius * 0.6-2, centerY + radius * 0.6);
     
     // 左半圆
     dropPath.arcTo(
@@ -216,35 +218,86 @@ class MapPainter extends CustomPainter {
     // 绘制边框
     canvas.drawPath(dropPath, borderPaint);
     
-    // 绘制内部的购物袋图标
-    final iconPaint = Paint()
-      ..color = const Color.fromARGB(255, 9, 26, 128)
+    // 使用Icons.shopping_bag图标
+    final iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(Icons.shopping_bag.codePoint),
+        style: TextStyle(
+          fontSize: 12.0,  
+          fontFamily: Icons.shopping_bag.fontFamily,
+          package: Icons.shopping_bag.fontPackage,
+          color: const Color.fromARGB(255, 255, 255, 255),  
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    
+    iconPainter.layout();
+    
+    // 绘制图标，居中对齐在水滴形状内
+    iconPainter.paint(
+      canvas,
+      Offset(-iconPainter.width / 2, centerY - iconPainter.height / 2),
+    );
+  }
+
+
+  // 添加绘制扶梯图标的方法
+  void _drawEscalatorIcons(Canvas canvas, double mapScale) {
+    for (var escalator in GeoJsonData.escalators) {
+      if (escalator.floor == floor) {
+        // 计算扶梯中心点
+        Point? center = _calculatePolygonCenter(escalator.coordinates);
+        if (center != null) {
+          canvas.save();
+          canvas.translate(center.x, center.y);
+          
+          // 绘制扶梯图标（使用Icons.stairs样式）
+          _drawEscalatorIcon(canvas);
+          
+          canvas.restore();
+        }
+      }
+    }
+  }
+
+  // 添加绘制扶梯图标的具体方法
+  void _drawEscalatorIcon(Canvas canvas) {
+    // 使用TextPainter绘制图标
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(Icons.stairs.codePoint),
+        style: TextStyle(
+          fontSize: 18.0,
+          fontFamily: Icons.stairs.fontFamily,
+          package: Icons.stairs.fontPackage,
+          color: const Color.fromARGB(255, 230, 126, 34),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    
+    textPainter.layout();
+    
+    // 绘制白色背景圆
+    final bgPaint = Paint()
+      ..color = Colors.white.withOpacity(0.95)
+      ..style = PaintingStyle.fill;
+    
+    final borderPaint = Paint()
+      ..color = const Color.fromARGB(255, 230, 126, 34)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+      ..strokeWidth = 1.5;
     
-    // 购物袋轮廓
-    final bagOutline = Path();
-    bagOutline.moveTo(-4, centerY);
-    bagOutline.lineTo(-4, centerY + 5);
-    bagOutline.lineTo(4, centerY + 5);
-    bagOutline.lineTo(4, centerY);
-    bagOutline.close();
+    const radius = 12.0;
+    canvas.drawCircle(Offset.zero, radius, bgPaint);
+    canvas.drawCircle(Offset.zero, radius, borderPaint);
     
-    canvas.drawPath(bagOutline, iconPaint);
-    
-    // 购物袋把手（两个分开的弧形）
-    final leftHandle = Path();
-    leftHandle.moveTo(-2, centerY);
-    leftHandle.quadraticBezierTo(-2, centerY - 3, 0, centerY - 3);
-    
-    final rightHandle = Path();
-    rightHandle.moveTo(2, centerY);
-    rightHandle.quadraticBezierTo(2, centerY - 3, 0, centerY - 3);
-    
-    canvas.drawPath(leftHandle, iconPaint);
-    canvas.drawPath(rightHandle, iconPaint);
+    // 绘制图标，居中对齐
+    textPainter.paint(
+      canvas,
+      Offset(-textPainter.width / 2, -textPainter.height / 2),
+    );
   }
 
   Map<String, double> _calculateBounds() {
@@ -272,6 +325,22 @@ class MapPainter extends CustomPainter {
     for (var store in GeoJsonData.stores) {
       if (store.floor == floor) {
         for (var polygon in store.coordinates) {
+          for (var ring in polygon) {
+            for (var point in ring) {
+              minX = math.min(minX, point.x);
+              maxX = math.max(maxX, point.x);
+              minY = math.min(minY, point.y);
+              maxY = math.max(maxY, point.y);
+            }
+          }
+        }
+      }
+    }
+
+    // 添加扶梯到边界计算
+    for (var escalator in GeoJsonData.escalators) {
+      if (escalator.floor == floor) {
+        for (var polygon in escalator.coordinates) {
           for (var ring in polygon) {
             for (var point in ring) {
               minX = math.min(minX, point.x);
@@ -418,5 +487,4 @@ class MapPainter extends CustomPainter {
            oldDelegate.highlightedAreas != highlightedAreas ||
            oldDelegate.selectedStoreId != selectedStoreId;  // 添加判断
   }
-
 }
