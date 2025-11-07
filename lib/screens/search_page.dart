@@ -169,11 +169,15 @@ class _SearchPageState extends State<SearchPage> {
     
     print('🔍 开始搜索: "$query"');
     
+    // 判断是否为店铺名称查询
+    bool isStoreNameQuery = _isStoreNameQuery(query);
+    
     setState(() {
       isSearching = true;
-      isLoading = true;
+      // 只有自然语言查询才显示加载状态
+      isLoading = !isStoreNameQuery;
       searchResults = [];  // 恢复清空逻辑，配合不缓存空结果使用
-      print('📝 搜索状态已更新: isSearching=true, isLoading=true, searchResults已清空');
+      print('📝 搜索状态已更新: isSearching=true, isLoading=$isLoading, searchResults已清空');
     });
     
     try {
@@ -215,6 +219,40 @@ class _SearchPageState extends State<SearchPage> {
       });
       _showSnackBar('搜索出现问题，已为您显示基础搜索结果');
     }
+  }
+
+  // 判断是否为店铺名称查询
+  bool _isStoreNameQuery(String query) {
+    String lowerQuery = query.toLowerCase().trim();
+    
+    // 定义常见的自然语言关键词
+    List<String> naturalLanguageKeywords = [
+      // 中文关键词
+      '化妆', '美妆', '护肤', '女装', '男装', '服装', '时尚', '餐厅', '美食', 
+      '咖啡', '书店', '阅读', '珠宝', '首饰', '运动', '健身', '数码', '电子',
+      '儿童', '玩具', '奢侈', '家居', '超市', '电影', '银行',
+      // 场景词汇
+      '工作', '安静', '学习', '约会', '购物', '休闲', '吃饭', '买礼物', '娱乐', '取钱',
+      '可以', '哪里', '想要', '需要', '推荐', '找', '买', '去',
+      // 英文关键词
+      'beauty', 'cosmetic', 'fashion', 'restaurant', 'coffee', 'cafe', 'book',
+      'jewelry', 'sport', 'digital', 'luxury', 'home', 'cinema', 'bank'
+    ];
+    
+    // 如果查询包含自然语言关键词，则不是店铺名称查询
+    for (String keyword in naturalLanguageKeywords) {
+      if (lowerQuery.contains(keyword)) {
+        return false;
+      }
+    }
+    
+    // 检查是否为纯品牌名称（通常较短且不包含描述性词汇）
+    if (lowerQuery.length <= 10 && !lowerQuery.contains(' ')) {
+      return true;
+    }
+    
+    // 默认认为是店铺名称查询
+    return true;
   }
 
   // 显示提示信息

@@ -1,4 +1,4 @@
-// 新的 map_painter.dart - 使用简单的反向缩放方法
+// map_painter.dart - 使用简单的反向缩放方法
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:ui' show PointMode, Path, Canvas, Offset, Size, Rect, RRect, Radius, PathFillType, TileMode, Gradient, Color, TextDirection, Image, Vertices, BlendMode, FilterQuality, StrokeCap, StrokeJoin, PaintingStyle, TextAlign, TextBaseline, TextBox, Shadow, MaskFilter, ColorFilter, ImageFilter, Shader, Paint, TextStyle, TextPainter;

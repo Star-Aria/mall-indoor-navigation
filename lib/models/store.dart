@@ -128,8 +128,11 @@ class StoreData {
   static Future<List<Store>> intelligentSearch(String query, {bool useAI = true}) async {
     if (query.isEmpty) return [];
     
-    if (useAI) {
-      // 使用AI进行智能搜索
+    // 判断是否为店铺名称查询
+    bool isStoreNameQuery = _isStoreNameQuery(query);
+    
+    if (useAI && !isStoreNameQuery) {
+      // 对于自然语言查询，使用AI进行智能搜索
       try {
         return await AISearchService.intelligentSearch(query, stores);
       } catch (e) {
@@ -138,9 +141,50 @@ class StoreData {
         return _localIntelligentSearch(query);
       }
     } else {
-      // 使用本地智能搜索
+      // 对于店铺名称查询或不使用AI的情况，使用本地智能搜索
       return _localIntelligentSearch(query);
     }
+  }
+
+  // 判断是否为店铺名称查询
+  static bool _isStoreNameQuery(String query) {
+    String lowerQuery = query.toLowerCase().trim();
+    
+    // 检查是否直接匹配任何店铺名称
+    for (var store in stores) {
+      if (store.name.toLowerCase().contains(lowerQuery)) {
+        return true;
+      }
+    }
+    
+    // 定义常见的自然语言关键词
+    List<String> naturalLanguageKeywords = [
+      // 中文关键词
+      '化妆', '美妆', '护肤', '女装', '男装', '服装', '时尚', '餐厅', '美食', 
+      '咖啡', '书店', '阅读', '珠宝', '首饰', '运动', '健身', '数码', '电子',
+      '儿童', '玩具', '奢侈', '家居', '超市', '电影', '银行',
+      // 场景词汇
+      '工作', '安静', '学习', '约会', '购物', '休闲', '吃饭', '买礼物', '娱乐', '取钱',
+      '可以', '哪里', '想要', '需要', '推荐', '找', '买', '去',
+      // 英文关键词
+      'beauty', 'cosmetic', 'fashion', 'restaurant', 'coffee', 'cafe', 'book',
+      'jewelry', 'sport', 'digital', 'luxury', 'home', 'cinema', 'bank'
+    ];
+    
+    // 如果查询包含自然语言关键词，则不是店铺名称查询
+    for (String keyword in naturalLanguageKeywords) {
+      if (lowerQuery.contains(keyword)) {
+        return false;
+      }
+    }
+    
+    // 检查是否为纯品牌名称（通常较短且不包含描述性词汇）
+    if (lowerQuery.length <= 10 && !lowerQuery.contains(' ')) {
+      return true;
+    }
+    
+    // 默认认为是店铺名称查询
+    return true;
   }
 
   // 本地智能搜索（不依赖AI API）
