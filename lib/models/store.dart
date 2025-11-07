@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'point.dart';
+import 'ai_search_service.dart';  // 导入AI搜索服务
 
 // 数据模型类
 class Store {
@@ -10,7 +11,7 @@ class Store {
   final String name;
   final int floor;
   final String type;
-  final String type2;  // 新增：具体类型
+  final String type2;  // 具体类型
   final Point? location;
 
   Store({
@@ -18,7 +19,7 @@ class Store {
     required this.name,
     required this.floor,
     required this.type,
-    required this.type2,  // 新增参数
+    required this.type2,  
     this.location,
   });
 }
@@ -100,7 +101,7 @@ class StoreData {
           name: name,
           floor: floor,
           type: type,
-          type2: type2,  // 新增
+          type2: type2,  
           location: location,
         ));
       }
@@ -113,6 +114,7 @@ class StoreData {
     }
   }
 
+  // 简单搜索方法（保留作为后备）
   static List<Store> searchStores(String query) {
     if (query.isEmpty) return [];
     
@@ -120,5 +122,113 @@ class StoreData {
       if (store.name.isEmpty) return false;
       return store.name.toLowerCase().contains(query.toLowerCase());
     }).toList();
+  }
+
+  // 智能搜索方法（使用AI）
+  static Future<List<Store>> intelligentSearch(String query, {bool useAI = true}) async {
+    if (query.isEmpty) return [];
+    
+    if (useAI) {
+      // 使用AI进行智能搜索
+      try {
+        return await AISearchService.intelligentSearch(query, stores);
+      } catch (e) {
+        print('AI搜索失败，使用本地搜索: $e');
+        // AI搜索失败时，降级到本地搜索
+        return _localIntelligentSearch(query);
+      }
+    } else {
+      // 使用本地智能搜索
+      return _localIntelligentSearch(query);
+    }
+  }
+
+  // 本地智能搜索（不依赖AI API）
+  static List<Store> _localIntelligentSearch(String query) {
+    String lowerQuery = query.toLowerCase();
+    
+    // 定义类型关键词映射
+    Map<String, List<String>> categoryKeywords = {
+      '化妆品': ['化妆', '美妆', '护肤', 'beauty', 'cosmetic', '彩妆', 'makeup'],
+      '女装': ['女装', '服装', 'fashion', '时尚', '衣服', 'women'],
+      '男装': ['男装', '服装', 'fashion', '男士', 'men'],
+      '餐饮': ['餐厅', '美食', '食品', 'restaurant', '吃饭', '餐饮', 'food'],
+      '咖啡': ['咖啡', 'coffee', 'cafe', 'starbucks', '星巴克'],
+      '书店': ['书店', '阅读', '图书', 'book', '书'],
+      '珠宝': ['珠宝', '首饰', 'jewelry', '钻石', '黄金', 'gold'],
+      '运动': ['运动', 'sport', '健身', '户外', 'nike', 'adidas'],
+      '数码': ['数码', '电子', '手机', '电脑', 'digital', 'apple', '苹果'],
+      '儿童': ['儿童', '玩具', '母婴', 'kids', '童装', 'toy'],
+      '奢侈品': ['奢侈', 'luxury', 'lv', 'gucci', 'dior', 'chanel', 'hermes'],
+    };
+    
+    // 场景匹配
+    Map<String, List<String>> scenarioKeywords = {
+      '工作': ['咖啡', 'coffee', 'cafe', '书店', 'book'],
+      '安静': ['咖啡', 'coffee', 'cafe', '书店', 'book', '阅读'],
+      '学习': ['咖啡', 'coffee', 'cafe', '书店', 'book'],
+      '约会': ['餐厅', 'restaurant', '咖啡', 'coffee', '浪漫'],
+      '购物': ['服装', '化妆', '珠宝', '数码', '奢侈'],
+      '休闲': ['咖啡', 'coffee', '餐厅', 'restaurant', '书店'],
+    };
+    
+    List<Store> results = [];
+    Map<Store, int> scoreMap = {}; // 用于评分排序
+    
+    // 1. 直接名称匹配（最高分：100分）
+    for (var store in stores) {
+      if (store.name.toLowerCase().contains(lowerQuery)) {
+        scoreMap[store] = (scoreMap[store] ?? 0) + 100;
+      }
+    }
+    
+    // 2. 类型关键词匹配（高分：50分）
+    for (var entry in categoryKeywords.entries) {
+      if (entry.value.any((keyword) => lowerQuery.contains(keyword))) {
+        for (var store in stores) {
+          String storeType = '${store.type} ${store.type2} ${store.name}'.toLowerCase();
+          if (entry.value.any((keyword) => storeType.contains(keyword))) {
+            scoreMap[store] = (scoreMap[store] ?? 0) + 50;
+          }
+        }
+      }
+    }
+    
+    // 3. 场景关键词匹配（中等分：30分）
+    for (var entry in scenarioKeywords.entries) {
+      if (lowerQuery.contains(entry.key)) {
+        for (var store in stores) {
+          String storeInfo = '${store.type} ${store.type2} ${store.name}'.toLowerCase();
+          if (entry.value.any((keyword) => storeInfo.contains(keyword))) {
+            scoreMap[store] = (scoreMap[store] ?? 0) + 30;
+          }
+        }
+      }
+    }
+    
+    // 4. 模糊匹配type和type2字段（低分：20分）
+    for (var store in stores) {
+      String storeInfo = '${store.type} ${store.type2}'.toLowerCase();
+      if (storeInfo.contains(lowerQuery) && !scoreMap.containsKey(store)) {
+        scoreMap[store] = (scoreMap[store] ?? 0) + 20;
+      }
+    }
+    
+    // 按分数排序
+    results = scoreMap.keys.toList()
+      ..sort((a, b) => scoreMap[b]!.compareTo(scoreMap[a]!));
+    
+    return results;
+  }
+
+  // 获取智能推荐
+  static Future<List<Store>> getRecommendations(List<String> searchHistory) async {
+    try {
+      return await AISearchService.getRecommendations(searchHistory, stores);
+    } catch (e) {
+      print('获取推荐失败: $e');
+      // 返回热门店铺作为默认推荐
+      return stores.take(5).toList();
+    }
   }
 }
