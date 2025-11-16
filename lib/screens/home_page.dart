@@ -7,6 +7,7 @@ import '../models/walkable_area.dart';
 import '../models/geojson.dart';
 import '../models/point.dart';
 import 'search_page.dart';
+import 'ar_navigation_page.dart';  // 新增：导入AR导航页面
 
 class HomePage extends StatefulWidget {
   final Store? targetStore;  // 目标店铺
@@ -56,9 +57,6 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           selectedFloor = _getFloorString(widget.targetFloor!);
           selectedStore = widget.targetStore;  // 设置选中的店铺，显示信息卡片
-          // 获取最近的可行走区域ID
-          nearestWalkableAreaId = WalkableAreaData.findNearestWalkableArea(widget.targetStore!.id);
-          print('从搜索跳转 - 店铺: ${widget.targetStore!.name}, 最近可行走区域: $nearestWalkableAreaId');
         });
         // 不需要移动地图，保持默认位置即可
         // 店铺信息卡片会自动显示
@@ -338,7 +336,6 @@ Widget _buildStoreInfoCard() {
                 onPressed: () {
                   setState(() {
                     selectedStore = null;
-                    nearestWalkableAreaId = null;  //清除walkable area ID
                   });
                 },
                 padding: EdgeInsets.zero,
@@ -362,48 +359,27 @@ Widget _buildStoreInfoCard() {
             ),
           ),
           Text(
-            '类型: ${selectedStore!.type2}',  
+            '类型: ${selectedStore!.type2}',  // 修改：显示type2而不是type
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
             ),
           ),
-
-          // 显示最近的可行走区域ID
-          if (nearestWalkableAreaId != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.location_on,
-                    size: 14,
-                    color: Colors.green[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      '最近可行走区域: $nearestWalkableAreaId',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.green[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
           const SizedBox(height: 12),
-          // 修改：只保留导航按钮
+          // 修改：导航按钮跳转到AR导航页面
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                // 实现导航功能，可以使用 nearestWalkableAreaId
-                print('导航到: ${selectedStore!.name}');
-                print('最近的可行走区域: $nearestWalkableAreaId');
+                // 跳转到AR导航页面
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ARNavigationPage(
+                      targetStore: selectedStore!,
+                    ),
+                  ),
+                );
               },
               icon: const Icon(Icons.navigation, size: 16),
               label: const Text('导航'),
@@ -626,8 +602,7 @@ Widget _buildStoreInfoCard() {
 
     //点击店铺显示信息
   Store? selectedStore;  // 当前选中的店铺
-  String? nearestWalkableAreaId;  // 存储最近的可行走区域ID
-
+  
   // 添加获取点击位置对应店铺的方法
   Store? _getStoreAtPosition(Offset localPosition, Size widgetSize) {
     // 获取当前变换矩阵
@@ -667,12 +642,11 @@ Widget _buildStoreInfoCard() {
         // 检查点是否在店铺多边形内
         if (_isPointInStore(Point(mapX, mapY), geoStore.coordinates)) {
           // 从StoreData中找到对应的Store对象
-          Store? storeToReturn;
           try {
-            storeToReturn = StoreData.stores.firstWhere((s) => s.id == geoStore.id);
+            return StoreData.stores.firstWhere((s) => s.id == geoStore.id);
           } catch (e) {
             // 如果找不到，创建一个临时的Store对象
-            storeToReturn = Store(
+            return Store(
               id: geoStore.id,
               name: geoStore.name ?? '未知店铺',
               floor: geoStore.floor,
@@ -681,12 +655,6 @@ Widget _buildStoreInfoCard() {
               location: _calculateStoreCenter(geoStore.coordinates),
             );
           }
-
-          // 获取最近的可行走区域ID
-          nearestWalkableAreaId = WalkableAreaData.findNearestWalkableArea(storeToReturn.id);
-          print('店铺 ${storeToReturn.name} (${storeToReturn.id}) 最近的可行走区域: $nearestWalkableAreaId');
-          
-          return storeToReturn;
         }
       }
     }
