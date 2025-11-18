@@ -220,8 +220,10 @@ class _HomePageState extends State<HomePage> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xFF87CEEB),
-                Color(0xFF9B59B6),
+                Color(0xFF5B9BD5),
+                Color(0xFF4A8BC2),
+                Color(0xFF3A7CA5),
+
               ],
             ),
           ),
@@ -265,8 +267,12 @@ class _HomePageState extends State<HomePage> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.fromARGB(255, 83, 186, 255),  
-            Color.fromARGB(255, 197, 127, 250),  
+            //Color(0xFF5B9BD5),  // 明亮天蓝色
+            Color(0xFF87CEEB),
+            Color(0xFF4A8BC2),  // 中蓝色
+            Color(0xFF3A7CA5),  // 较深蓝色
+            //Color(0xFF87CEEB),
+            //Color(0xFF2E86AB),
           ],
         ),
       ),
@@ -773,24 +779,36 @@ Widget _buildStoreInfoCard() {
           
           return Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.white.withOpacity(0.3),
-                  blurRadius: 5,
-                  spreadRadius: -2,
+                  color: Colors.blue.withOpacity(0.2),
+                  blurRadius: 30,
+                  spreadRadius: -5,
                   offset: const Offset(0, -2),
                 ),
               ],
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               child: GestureDetector(
                 onTapUp: (TapUpDetails details) {
                   // 获取点击位置对应的店铺
@@ -821,9 +839,15 @@ Widget _buildStoreInfoCard() {
                     width: mapWidth,
                     height: mapHeight,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.blue.withOpacity(0.5), width: 2),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF546E7A),  // 中灰蓝
+                          Color(0xFF455A64),  // 深灰蓝
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: CustomPaint(
                       painter: MapPainter(

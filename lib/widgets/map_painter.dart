@@ -116,9 +116,16 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
           text: TextSpan(
             text: store.name,
             style: TextStyle(
-              color: Colors.black87,
-              fontSize: isLandscape ? 9.0 : 11.0,  // 横屏时字体更小
+              color: Colors.white,
+              fontSize: isLandscape ? 9.0 : 11.0,
               fontWeight: FontWeight.w600,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.6),
+                  offset: const Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
           ),
           textDirection: TextDirection.ltr,
@@ -130,30 +137,36 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
           -textPainter.height / 2,
         );
         
+        // 背景使用深色半透明
         final bgPaint = Paint()
-          ..color = Colors.white.withOpacity(0.95)
+          ..color = const Color(0xFF263238).withOpacity(0.9)
           ..style = PaintingStyle.fill;
         
         final bgRect = RRect.fromRectAndRadius(
           Rect.fromLTWH(
-            textOffset.dx - 2,
-            textOffset.dy - 1,
-            textPainter.width + 4,
-            textPainter.height + 2,
+            textOffset.dx - 4,
+            textOffset.dy - 2,
+            textPainter.width + 8,
+            textPainter.height + 4,
           ),
-          const Radius.circular(2),
+          const Radius.circular(4),
         );
         
-        final shadowPaint = Paint()
-          ..color = Colors.black.withOpacity(0.1)
+        // 外发光
+        final glowPaint = Paint()
+          ..color = const Color(0xFF42A5F5).withOpacity(0.3)
           ..style = PaintingStyle.fill
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
         
-        canvas.drawRRect(
-          bgRect.shift(const Offset(0, 0.5)),
-          shadowPaint,
-        );
+        // 边框
+        final borderPaint = Paint()
+          ..color = const Color(0xFF42A5F5).withOpacity(0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+        
+        canvas.drawRRect(bgRect, glowPaint);
         canvas.drawRRect(bgRect, bgPaint);
+        canvas.drawRRect(bgRect, borderPaint);
         
         textPainter.paint(canvas, textOffset);
         
@@ -164,16 +177,6 @@ void _drawStoreLabels(Canvas canvas, double mapScale) {
 }
 
 void _drawStoreIcon(Canvas canvas, String storeType) {
-  // 图标颜色
-  final bgPaint = Paint()
-    ..color = const Color.fromARGB(141, 255, 97, 179)
-    ..style = PaintingStyle.fill;
-  
-  final borderPaint = Paint()
-    ..color = const Color.fromARGB(255, 255, 255, 255)
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.5;
-  
   // 创建水滴形状的路径
   final dropPath = Path();
   
@@ -207,6 +210,31 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
   
   dropPath.close();
   
+  // 绘制外发光
+  final glowPaint = Paint()
+    ..color = const Color(0xFF42A5F5).withOpacity(0.5)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+    ..style = PaintingStyle.fill;
+  canvas.drawPath(dropPath, glowPaint);
+  
+  // 图标渐变填充 - 明亮蓝色
+  final bgPaint = Paint()
+    ..shader = const LinearGradient(
+      begin: Alignment(0, -1),
+      end: Alignment(0, 1),
+      colors: [
+        Color(0xFF4facfe),
+        Color(0xFF00f2fe),
+      ],
+    ).createShader(dropPath.getBounds())
+    ..style = PaintingStyle.fill;
+  
+  // 边框
+  final borderPaint = Paint()
+    ..color = Colors.white.withOpacity(0.6)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0;
+  
   // 绘制填充的水滴形状
   canvas.drawPath(dropPath, bgPaint);
   
@@ -219,18 +247,15 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
   
   switch (storeType.toLowerCase()) {
     case 'cosmetics':
-      // 使用face或palette图标代表化妆品
       iconData = Icons.brush;
       fontSize = 11.0;
       break;
     case 'food':
-      // 使用餐饮图标
       iconData = Icons.restaurant;
       fontSize = 12.0;
       break;
     case 'store':
     default:
-      // 默认使用购物袋图标
       iconData = Icons.shopping_bag;
       fontSize = 12.0;
       break;
@@ -244,7 +269,14 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
         fontSize: fontSize,
         fontFamily: iconData.fontFamily,
         package: iconData.fontPackage,
-        color: const Color.fromARGB(255, 255, 255, 255),
+        color: Colors.white,
+        shadows: [
+          Shadow(
+            color: Colors.black.withOpacity(0.4),
+            offset: const Offset(0, 1),
+            blurRadius: 2,
+          ),
+        ],
       ),
     ),
     textDirection: TextDirection.ltr,
@@ -281,6 +313,35 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
 
   // 添加绘制扶梯图标的具体方法
   void _drawEscalatorIcon(Canvas canvas) {
+    const radius = 12.0;
+    
+    // 外发光
+    final glowPaint = Paint()
+      ..color = const Color(0xFFFF9800).withOpacity(0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset.zero, radius, glowPaint);
+    
+    // 绘制渐变背景圆
+    final bgPaint = Paint()
+      ..shader = const RadialGradient(
+        colors: [
+          Color(0xFFFF9800),
+          Color(0xFFFF6F00),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius))
+      ..style = PaintingStyle.fill;
+    
+    canvas.drawCircle(Offset.zero, radius, bgPaint);
+    
+    // 边框
+    final borderPaint = Paint()
+      ..color = Colors.white.withOpacity(0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    
+    canvas.drawCircle(Offset.zero, radius, borderPaint);
+    
     // 使用TextPainter绘制图标
     final textPainter = TextPainter(
       text: TextSpan(
@@ -289,27 +350,20 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
           fontSize: 18.0,
           fontFamily: Icons.stairs.fontFamily,
           package: Icons.stairs.fontPackage,
-          color: const Color.fromARGB(255, 230, 126, 34),
+          color: Colors.white,
+          shadows: [
+            Shadow(
+              color: Colors.black.withOpacity(0.4),
+              offset: const Offset(0, 1),
+              blurRadius: 2,
+            ),
+          ],
         ),
       ),
       textDirection: TextDirection.ltr,
     );
     
     textPainter.layout();
-    
-    // 绘制白色背景圆
-    final bgPaint = Paint()
-      ..color = Colors.white.withOpacity(0.95)
-      ..style = PaintingStyle.fill;
-    
-    final borderPaint = Paint()
-      ..color = const Color.fromARGB(255, 230, 126, 34)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    
-    const radius = 12.0;
-    canvas.drawCircle(Offset.zero, radius, bgPaint);
-    canvas.drawCircle(Offset.zero, radius, borderPaint);
     
     // 绘制图标，居中对齐
     textPainter.paint(
@@ -380,8 +434,21 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
   }
 
   void _drawWalkableArea(Canvas canvas, Size size, Map<String, double> bounds) {
+    // 淡蓝渐变背景
     final paint = Paint()
-      ..color = const Color.fromARGB(255, 225, 246, 215)
+      ..shader = LinearGradient(
+        colors: [
+          Color.fromARGB(255, 216, 238, 247),
+          Color.fromARGB(255, 172, 229, 255),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTRB(
+        bounds['minX']!,
+        bounds['minY']!,
+        bounds['maxX']!,
+        bounds['maxY']!,
+      ))
       ..style = PaintingStyle.fill;
 
     // 绘制整个区域作为可行走区域背景
@@ -396,7 +463,12 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
     // 绘制高亮区域
     if (highlightedAreas.isNotEmpty) {
       final highlightPaint = Paint()
-        ..color = const Color.fromARGB(100, 0, 100, 255) // 半透明蓝色
+        ..shader = LinearGradient(
+          colors: [
+            Color(0xFF42A5F5).withOpacity(0.4),
+            Color(0xFF1E88E5).withOpacity(0.4),
+          ],
+        ).createShader(rect)
         ..style = PaintingStyle.fill;
 
       for (var area in WalkableAreaData.areas) {
@@ -418,14 +490,16 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
   }
 
   void _drawBarriers(Canvas canvas) {
+    // 主填充 -浅灰
     final paint = Paint()
-      ..color = const Color.fromARGB(255, 235, 235, 235) // 暗灰色
+      ..color = const Color.fromARGB(255, 190, 206, 215)
       ..style = PaintingStyle.fill;
 
+    // 边框 - 深灰
     final strokePaint = Paint()
-      ..color = const Color.fromARGB(255, 102, 102, 102) // 深灰色边框
+      ..color = const Color.fromARGB(255, 85, 107, 117).withOpacity(0.7)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.2;
 
     for (var barrier in GeoJsonData.barriers) {
       if (barrier.floor == floor) {
@@ -438,6 +512,7 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
                 path.lineTo(ring[i].x, ring[i].y);
               }
               path.close();
+              
               canvas.drawPath(path, paint);
               canvas.drawPath(path, strokePaint);
             }
@@ -449,24 +524,6 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
 
   // 修改 _drawStores 方法以高亮显示选中的店铺
   void _drawStores(Canvas canvas) {
-    final paint = Paint()
-      ..color = const Color.fromARGB(255, 132, 194, 244)
-      ..style = PaintingStyle.fill;
-
-    final strokePaint = Paint()
-      ..color = Colors.blue.shade800
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-      
-    final selectedPaint = Paint()
-      ..color = Colors.orange.withOpacity(0.8)  // 选中店铺的颜色
-      ..style = PaintingStyle.fill;
-      
-    final selectedStrokePaint = Paint()
-      ..color = Colors.orange.shade900
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
     for (var store in GeoJsonData.stores) {
       if (store.floor == floor) {
         bool isSelected = store.id == selectedStoreId;
@@ -481,11 +538,54 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
               }
               path.close();
               
-              // 使用不同的颜色绘制选中的店铺
               if (isSelected) {
+                // 选中店铺 - 使用明亮的橙红渐变
+                final selectedPaint = Paint()
+                  ..shader = const LinearGradient(
+                    colors: [
+                      Color(0xFFFF9800),  // 明亮橙色
+                      Color(0xFFFF6F00),  // 深橙色
+                    ],
+                  ).createShader(path.getBounds())
+                  ..style = PaintingStyle.fill;
+                  
+                // 外发光
+                final glowPaint = Paint()
+                  ..color = const Color(0xFFFF9800).withOpacity(0.5)
+                  ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+                  ..style = PaintingStyle.fill;
+                  
+                final selectedStrokePaint = Paint()
+                  ..color = const Color(0xFFFF6F00)
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = 2.0;
+                
+                canvas.drawPath(path, glowPaint);
                 canvas.drawPath(path, selectedPaint);
                 canvas.drawPath(path, selectedStrokePaint);
               } else {
+                // 普通店铺 - 使用明亮的蓝色渐变
+                final paint = Paint()
+                  ..shader = const LinearGradient(
+                    colors: [
+                      Color(0xFF667eea),  // 柔和的蓝紫
+                      Color(0xFF64b5f6), 
+                    ],
+                  ).createShader(path.getBounds())
+                  ..style = PaintingStyle.fill;
+
+                // 外发光
+                final glowPaint = Paint()
+                  ..color = const Color.fromARGB(255, 47, 154, 254).withOpacity(0.7)
+                  ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+                  ..style = PaintingStyle.fill;
+                  
+                final strokePaint = Paint()
+                  ..color = const Color(0xFF1976D2)
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = 1.5;
+
+                canvas.drawPath(path, glowPaint);
                 canvas.drawPath(path, paint);
                 canvas.drawPath(path, strokePaint);
               }
