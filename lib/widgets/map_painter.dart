@@ -438,8 +438,14 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
     final paint = Paint()
       ..shader = LinearGradient(
         colors: [
-          Color.fromARGB(255, 216, 238, 247),
-          Color.fromARGB(255, 172, 229, 255),
+          //淡色系组
+          //Color.fromARGB(255, 216, 238, 247),
+          //Color.fromARGB(255, 172, 229, 255),
+
+          //深色系组
+          Color.fromARGB(255, 33, 50, 117),
+          Color.fromARGB(255, 7, 17, 58),
+          
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -489,18 +495,7 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
     }
   }
 
-  void _drawBarriers(Canvas canvas) {
-    // 主填充 -浅灰
-    final paint = Paint()
-      ..color = const Color.fromARGB(255, 190, 206, 215)
-      ..style = PaintingStyle.fill;
-
-    // 边框 - 深灰
-    final strokePaint = Paint()
-      ..color = const Color.fromARGB(255, 85, 107, 117).withOpacity(0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-
+    void _drawBarriers(Canvas canvas) {
     for (var barrier in GeoJsonData.barriers) {
       if (barrier.floor == floor) {
         for (var polygon in barrier.coordinates) {
@@ -512,6 +507,24 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
                 path.lineTo(ring[i].x, ring[i].y);
               }
               path.close();
+              
+              // 灰色渐变填充
+              final paint = Paint()
+                ..shader = LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color.fromARGB(255, 236, 242, 246),  // 浅灰
+                    const Color.fromARGB(255, 164, 190, 202),  // 中灰
+                  ],
+                ).createShader(path.getBounds())
+                ..style = PaintingStyle.fill;
+
+              // 边框 - 深灰
+              final strokePaint = Paint()
+                ..color = const Color.fromARGB(255, 85, 107, 117).withOpacity(0.7)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.2;
               
               canvas.drawPath(path, paint);
               canvas.drawPath(path, strokePaint);
@@ -570,18 +583,19 @@ void _drawStoreIcon(Canvas canvas, String storeType) {
                     colors: [
                       Color(0xFF667eea),  // 柔和的蓝紫
                       Color(0xFF64b5f6), 
+
                     ],
                   ).createShader(path.getBounds())
                   ..style = PaintingStyle.fill;
 
                 // 外发光
                 final glowPaint = Paint()
-                  ..color = const Color.fromARGB(255, 47, 154, 254).withOpacity(0.7)
+                  ..color = const Color.fromARGB(255, 47, 247, 254).withOpacity(1)
                   ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
                   ..style = PaintingStyle.fill;
                   
                 final strokePaint = Paint()
-                  ..color = const Color(0xFF1976D2)
+                  ..color = const Color.fromARGB(255, 88, 170, 253)
                   ..style = PaintingStyle.stroke
                   ..strokeWidth = 1.5;
 

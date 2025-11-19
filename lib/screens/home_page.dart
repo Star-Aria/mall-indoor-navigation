@@ -7,7 +7,8 @@ import '../models/walkable_area.dart';
 import '../models/geojson.dart';
 import '../models/point.dart';
 import 'search_page.dart';
-import 'ar_navigation_page.dart';  // 新增：导入AR导航页面
+import 'ar_navigation_page.dart'; 
+import 'dart:ui';
 
 class HomePage extends StatefulWidget {
   final Store? targetStore;  // 目标店铺
@@ -268,11 +269,14 @@ class _HomePageState extends State<HomePage> {
           end: Alignment.bottomCenter,
           colors: [
             //Color(0xFF5B9BD5),  // 明亮天蓝色
-            Color(0xFF87CEEB),
-            Color(0xFF4A8BC2),  // 中蓝色
-            Color(0xFF3A7CA5),  // 较深蓝色
-            //Color(0xFF87CEEB),
-            //Color(0xFF2E86AB),
+            /*Color(0xFF87CEEB),  //中蓝色组
+            Color(0xFF4A8BC2),  
+            Color(0xFF3A7CA5),  */
+            /*Color.fromARGB(255, 53, 115, 153),  //深蓝色组
+            Color.fromARGB(255, 33, 41, 134), */
+
+            Color(0xFF667eea),
+            Color(0xFF764ba2),
           ],
         ),
       ),
@@ -310,96 +314,129 @@ Widget _buildStoreInfoCard() {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.25),
+            Colors.white.withOpacity(0.15),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  selectedStore!.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      selectedStore!.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () {
+                      setState(() {
+                        selectedStore = null;
+                      });
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '楼层: ${selectedStore!.floor}楼',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () {
-                  setState(() {
-                    selectedStore = null;
-                  });
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+              Text(
+                '店铺编号: ${selectedStore!.id}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+              Text(
+                '类型: ${selectedStore!.type2}',  
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // 修改：导航按钮跳转到AR导航页面
+              SizedBox(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4facfe).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // 跳转到AR导航页面
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ARNavigationPage(
+                              targetStore: selectedStore!,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.navigation, size: 16),
+                      label: const Text('导航'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ).copyWith(
+                        backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                      ),
+                    ),
+                  ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            '楼层: ${selectedStore!.floor}楼',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          Text(
-            '店铺编号: ${selectedStore!.id}',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          Text(
-            '类型: ${selectedStore!.type2}',  // 修改：显示type2而不是type
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // 修改：导航按钮跳转到AR导航页面
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // 跳转到AR导航页面
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ARNavigationPage(
-                      targetStore: selectedStore!,
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.navigation, size: 16),
-              label: const Text('导航'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     ),
   );
@@ -413,16 +450,31 @@ Widget _buildStoreInfoCard() {
       child: Container(
         width: 45, 
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withOpacity(0.25),
+              Colors.white.withOpacity(0.1),
+            ],
+          ),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -462,12 +514,26 @@ Widget _buildStoreInfoCard() {
                       margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 3),
                       padding: const EdgeInsets.symmetric(vertical: 6), 
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.blue : Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isSelected ? Colors.blue : Colors.transparent,
-                          width: 2,
-                        ),
+                        gradient: isSelected
+                            ? const LinearGradient(
+                                colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                              )
+                            : LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.1),
+                                  Colors.white.withOpacity(0.05),
+                                ],
+                              ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF4facfe).withOpacity(0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : [],
                       ),
                       child: Text(
                         floor,
@@ -486,10 +552,12 @@ Widget _buildStoreInfoCard() {
           ],
         ),
       ),
+      ),
+      ), 
     );
   }
 
-  // 底部导航栏
+    // 底部导航栏
   Widget _buildBottomNavigation() {
     return Container(
       margin: const EdgeInsets.all(12), 
@@ -497,6 +565,18 @@ Widget _buildStoreInfoCard() {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -552,13 +632,37 @@ Widget _buildStoreInfoCard() {
           Container(
             padding: const EdgeInsets.all(8), 
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
               shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.25),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.search,
-              color: Colors.white,
-              size: 20, 
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: const Icon(
+                  Icons.search,
+                  color: Colors.white,
+                  size: 20, 
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 8), 
@@ -577,26 +681,50 @@ Widget _buildStoreInfoCard() {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20), 
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.edit, color: Colors.grey, size: 18), 
-                    const SizedBox(width: 6),
-                    const Expanded(
-                      child: Text(
-                        'Search...',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14, 
-                        ),
-                      ),
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.25),
+                      Colors.white.withOpacity(0.15),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
-                    const Icon(Icons.camera_alt, color: Colors.grey, size: 18), 
-                    const SizedBox(width: 6),
-                    const Icon(Icons.mic, color: Colors.grey, size: 18), 
                   ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, color: Colors.white.withOpacity(0.8), size: 18), 
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Search...',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 14, 
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.camera_alt, color: Colors.white.withOpacity(0.6), size: 18), 
+                        const SizedBox(width: 6),
+                        Icon(Icons.mic, color: Colors.white.withOpacity(0.6), size: 18), 
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -763,8 +891,8 @@ Widget _buildStoreInfoCard() {
     };
   }
 
-  // 地图区域 
-  Widget _buildMapArea() {
+// 地图区域 
+Widget _buildMapArea() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 8),
     child: SizedBox(
@@ -784,79 +912,81 @@ Widget _buildStoreInfoCard() {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
                 ],
+              ),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 20,
-                  spreadRadius: -2,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.2),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 30,
                   spreadRadius: -5,
+                  offset: const Offset(0, 15),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
               ],
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: GestureDetector(
-                onTapUp: (TapUpDetails details) {
-                  // 获取点击位置对应的店铺
-                  final RenderBox renderBox = context.findRenderObject() as RenderBox;
-                  final localPosition = renderBox.globalToLocal(details.globalPosition);
-                  final store = _getStoreAtPosition(localPosition, renderBox.size);
-                  
-                  if (store != null) {
-                    setState(() {
-                      selectedStore = store;
-                    });
-                  }
-                },
-                child: InteractiveViewer(
-                  transformationController: _transformationController,
-                  minScale: 1.0,
-                  maxScale: 3.0,
-                  boundaryMargin: EdgeInsets.zero,
-                  panEnabled: true,
-                  scaleEnabled: true,
-                  constrained: false,
-                  onInteractionUpdate: (details) {
-                    setState(() {
-                      _currentScale = _transformationController.value.getMaxScaleOnAxis();
-                    });
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: GestureDetector(
+                  onTapUp: (TapUpDetails details) {
+                    // 获取点击位置对应的店铺
+                    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                    final localPosition = renderBox.globalToLocal(details.globalPosition);
+                    final store = _getStoreAtPosition(localPosition, renderBox.size);
+                    
+                    if (store != null) {
+                      setState(() {
+                        selectedStore = store;
+                      });
+                    }
                   },
-                  child: Container(
-                    width: mapWidth,
-                    height: mapHeight,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF546E7A),  // 中灰蓝
-                          Color(0xFF455A64),  // 深灰蓝
-                        ],
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 1.0,
+                    maxScale: 3.0,
+                    boundaryMargin: EdgeInsets.zero,
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    constrained: false,
+                    onInteractionUpdate: (details) {
+                      setState(() {
+                        _currentScale = _transformationController.value.getMaxScaleOnAxis();
+                      });
+                    },
+                    child: Container(
+                      width: mapWidth,
+                      height: mapHeight,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF546E7A),  // 中灰蓝
+                            Color(0xFF455A64),  // 深灰蓝
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: CustomPaint(
-                      painter: MapPainter(
-                        floor: _getFloorNumber(selectedFloor),
-                        scale: 1.0,
-                        viewerScale: _currentScale,
-                        selectedStoreId: selectedStore?.id,  // 传递选中的店铺ID
+                      child: CustomPaint(
+                        painter: MapPainter(
+                          floor: _getFloorNumber(selectedFloor),
+                          scale: 1.0,
+                          viewerScale: _currentScale,
+                          selectedStoreId: selectedStore?.id,  // 传递选中的店铺ID
+                        ),
+                        size: Size(mapWidth, mapHeight),
                       ),
-                      size: Size(mapWidth, mapHeight),
                     ),
                   ),
                 ),
@@ -868,7 +998,6 @@ Widget _buildStoreInfoCard() {
     ),
   );
 }
-
   // 右侧功能按钮
   Widget _buildRightSideButtons() {
     return Positioned(
@@ -882,8 +1011,19 @@ Widget _buildStoreInfoCard() {
           width: 35,
           height: 35,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(6),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.25),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -892,10 +1032,16 @@ Widget _buildStoreInfoCard() {
               ),
             ],
           ),
-          child: Icon(
-            Icons.fullscreen,
-            color: Colors.grey[700],
-            size: 20,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: const Icon(
+                Icons.fullscreen,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
           ),
         ),
       ),

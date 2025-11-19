@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:ui';
 import '../models/store.dart';
 
 class ARNavigationPage extends StatefulWidget {
@@ -52,12 +53,12 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
     setState(() {
       _isVoiceMode = !_isVoiceMode;
       if (!_isVoiceMode) {
-        // 切换到文字模式时，显示键盘
+        // 切换到文字模式时,显示键盘
         Future.delayed(const Duration(milliseconds: 100), () {
           _focusNode.requestFocus();
         });
       } else {
-        // 切换到语音模式时，隐藏键盘
+        // 切换到语音模式时,隐藏键盘
         _focusNode.unfocus();
       }
     });
@@ -98,7 +99,7 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
         child: SafeArea(
           child: Stack(
             children: [
-              // AR界面占位区域（中间部分）
+              // AR界面占位区域(中间部分)
               Center(
                 child: Container(
                   // Unity的AR界面将在这里渲染
@@ -106,7 +107,7 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
                 ),
               ),
               
-              // 取景框（点击获取位置后显示）
+              // 取景框(点击获取位置后显示)
               if (_showViewfinder)
                 _buildViewfinder(),
               
@@ -172,8 +173,19 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.25),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -182,10 +194,16 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.arrow_back,
-            color: Colors.black87,
-            size: 24,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
           ),
         ),
       ),
@@ -206,8 +224,19 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.25),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -216,10 +245,16 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.settings,
-            color: Colors.black87,
-            size: 24,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: const Icon(
+                Icons.settings,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
           ),
         ),
       ),
@@ -251,8 +286,19 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withOpacity(0.25),
+                            Colors.white.withOpacity(0.15),
+                          ],
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.2),
@@ -261,33 +307,39 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
                           ),
                         ],
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            '开启数字人',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                '开启数字人',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 0),
+                              Transform.scale(
+                                scale: 0.75,
+                                child: Switch(
+                                  value: _digitalHumanEnabled,
+                                  activeColor: Colors.green,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _digitalHumanEnabled = value;
+                                    });
+                                    // TODO: 将设置传递给Unity
+                                    print('数字人开关状态: $value');
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 0),
-                          Transform.scale(
-                            scale: 0.75,
-                            child: Switch(
-                              value: _digitalHumanEnabled,
-                              activeColor: Colors.green,
-                              onChanged: (value) {
-                                setState(() {
-                                  _digitalHumanEnabled = value;
-                                });
-                                // TODO: 将设置传递给Unity
-                                print('数字人开关状态: $value');
-                              },
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                     // 小三角指示器
@@ -308,44 +360,50 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
     );
   }
 
-  // 获取位置按钮
   Widget _buildLocationButton() {
     return Positioned(
-      bottom: 210,
+      bottom: 220,
       left: 0,
       right: 0,
       child: Center(
         child: GestureDetector(
           onTap: _showViewfinderTemporarily,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF4facfe).withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
+                Icon(
+                  Icons.my_location,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(width: 8),
                 Text(
                   '获取位置',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                SizedBox(width: 8),
-                Icon(
-                  Icons.refresh,
-                  color: Colors.white,
-                  size: 15,
                 ),
               ],
             ),
@@ -369,12 +427,23 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
           top: 12,
         ),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.7),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(10),
             topRight: Radius.circular(10),
             bottomLeft: Radius.circular(10),
             bottomRight: Radius.circular(10),
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withOpacity(0.25),
+              Colors.white.withOpacity(0.15),
+            ],
+          ),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
           ),
           boxShadow: [
             BoxShadow(
@@ -384,57 +453,84 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // 左侧切换按钮（键盘/语音）
-            GestureDetector(
-              onTap: _toggleInputMode,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _isVoiceMode ? Icons.keyboard : Icons.mic,
-                  color: Colors.black87,
-                  size: 24,
-                ),
-              ),
-            ),
-            
-            const SizedBox(width: 12),
-            
-            // 中间输入框
-            Expanded(
-              child: _isVoiceMode
-                  ? _buildVoiceInputButton()
-                  : _buildTextInputField(),
-            ),
-            
-            const SizedBox(width: 12),
-            
-            // 右侧发送按钮（仅文字模式显示）
-            if (!_isVoiceMode)
-              GestureDetector(
-                onTap: _sendTextMessage,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    '发送',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Row(
+              children: [
+                // 左侧切换按钮(键盘/语音)
+                GestureDetector(
+                  onTap: _toggleInputMode,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      _isVoiceMode ? Icons.keyboard : Icons.mic,
+                      color: Colors.black87,
+                      size: 24,
                     ),
                   ),
                 ),
-              ),
-          ],
+                
+                const SizedBox(width: 12),
+                
+                // 中间输入框
+                Expanded(
+                  child: _isVoiceMode
+                      ? _buildVoiceInputButton()
+                      : _buildTextInputField(),
+                ),
+                
+                const SizedBox(width: 12),
+                
+                // 右侧发送按钮(仅文字模式显示)
+                if (!_isVoiceMode)
+                  GestureDetector(
+                    onTap: _sendTextMessage,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color.fromARGB(255, 129, 247, 198), Color.fromARGB(255, 154, 249, 119)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                          BoxShadow(
+                            color: const Color.fromARGB(255, 164, 246, 171).withOpacity(0.5),
+                            blurRadius: 20,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        '发送',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 1, 85, 0),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -450,6 +546,13 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey[300]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: const Center(
           child: Text(
@@ -464,6 +567,7 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
     );
   }
 
+
   // 文字输入框
   Widget _buildTextInputField() {
     return Container(
@@ -472,13 +576,20 @@ class _ARNavigationPageState extends State<ARNavigationPage> {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 20),
+          ),
+        ],
       ),
       child: TextField(
         controller: _textController,
         focusNode: _focusNode,
         style: const TextStyle(fontSize: 14),
         decoration: const InputDecoration(
-          hintText: '想聊点什么？',
+          hintText: '想聊点什么?',
           hintStyle: TextStyle(color: Colors.grey),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -558,7 +669,7 @@ class TrianglePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = Colors.white.withOpacity(0.9)
       ..style = PaintingStyle.fill;
 
     final path = Path();
