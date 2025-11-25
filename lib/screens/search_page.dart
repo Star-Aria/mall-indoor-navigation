@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import '../models/store.dart';
 import '../models/walkable_area.dart';
 import 'home_page.dart'; 
+import 'dart:ui'; 
 
 // 搜索页面
 class SearchPage extends StatefulWidget {
@@ -16,7 +16,7 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   
-  List<String> searchHistory = ['星巴克', 'DIOR', 'CHANEL'];
+  static List<String> searchHistory = ['星巴克', 'DIOR', 'CHANEL'];
   List<Store> searchResults = [];
   bool isSearching = false;
   bool isLoading = false;
@@ -45,8 +45,8 @@ class _SearchPageState extends State<SearchPage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
+              Color(0xFF87CEEB),
+              Color(0xFF2E86AB),
             ],
           ),
         ),
@@ -79,37 +79,13 @@ class _SearchPageState extends State<SearchPage> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(6),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.25),
-                    Colors.white.withOpacity(0.1),
-                  ],
-                ),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 18,
               ),
             ),
           ),
@@ -121,61 +97,39 @@ class _SearchPageState extends State<SearchPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.25),
-                    Colors.white.withOpacity(0.15),
-                  ],
-                ),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, color: Colors.white.withOpacity(0.8), size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _focusNode,
-                          style: const TextStyle(fontSize: 14, color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Search...',
-                            hintStyle: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6)),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                            isDense: true,
-                          ),
-                          onChanged: (value) {
-                            setState(() {});
-                          },
-                          onSubmitted: (value) {
-                            _performSearch();
-                          },
-                        ),
+              child: Row(
+                children: [
+                  const Icon(Icons.edit, color: Colors.grey, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _focusNode,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: const InputDecoration(
+                        hintText: 'Search...',
+                        hintStyle: TextStyle(fontSize: 14),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        isDense: true,
                       ),
-                      Icon(Icons.camera_alt, color: Colors.white.withOpacity(0.6), size: 16),
-                      const SizedBox(width: 6),
-                      Icon(Icons.mic, color: Colors.white.withOpacity(0.6), size: 16),
-                    ],
+                      onChanged: (value) {
+                        setState(() {
+                          // 可以在这里实现实时搜索
+                        });
+                      },
+                      onSubmitted: (value) {
+                        _performSearch();
+                      },
+                    ),
                   ),
-                ),
+                  const Icon(Icons.camera_alt, color: Colors.grey, size: 16),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.mic, color: Colors.grey, size: 16),
+                ],
               ),
             ),
           ),
@@ -188,22 +142,8 @@ class _SearchPageState extends State<SearchPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
+                color: Colors.blue,
                 borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: const Color(0xFF4facfe).withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: const Text(
                 '搜索',
@@ -230,16 +170,19 @@ class _SearchPageState extends State<SearchPage> {
     
     print('🔍 开始搜索: "$query"');
     
+    // 判断是否为店铺名称查询
     bool isStoreNameQuery = _isStoreNameQuery(query);
     
     setState(() {
       isSearching = true;
+      // 只有自然语言查询才显示加载状态
       isLoading = !isStoreNameQuery;
       searchResults = [];
       print('📝 搜索状态已更新: isSearching=true, isLoading=$isLoading, searchResults已清空');
     });
     
     try {
+      // 使用智能搜索（优先使用AI，失败则降级到本地智能搜索）
       print('🤖 调用 StoreData.intelligentSearch...');
       final results = await StoreData.intelligentSearch(query, useAI: true);
       print('✅ 搜索返回 ${results.length} 个结果');
@@ -250,6 +193,7 @@ class _SearchPageState extends State<SearchPage> {
         isLoading = false;
         print('📝 UI已更新: searchResults.length=${searchResults.length}, isLoading=false');
         
+        // 添加到搜索历史
         if (!searchHistory.contains(query)) {
           searchHistory.insert(0, query);
           if (searchHistory.length > 10) {
@@ -258,6 +202,7 @@ class _SearchPageState extends State<SearchPage> {
         }
       });
       
+      // 显示搜索结果反馈
       if (results.isEmpty) {
         print('⚠️ 结果为空，显示提示');
         _showSnackBar('没有找到相关店铺，试试其他关键词吧');
@@ -270,6 +215,7 @@ class _SearchPageState extends State<SearchPage> {
       print('❌ 搜索错误: $e');
       setState(() {
         isLoading = false;
+        // 出错时使用原有的简单搜索作为最后的后备
         searchResults = StoreData.searchStores(query);
       });
       _showSnackBar('搜索出现问题，已为您显示基础搜索结果');
@@ -280,247 +226,261 @@ class _SearchPageState extends State<SearchPage> {
   bool _isStoreNameQuery(String query) {
     String lowerQuery = query.toLowerCase().trim();
     
-    for (var store in StoreData.stores) {
-      if (store.name.toLowerCase().contains(lowerQuery)) {
-        return true;
-      }
-    }
-    
+    // 定义常见的自然语言关键词
     List<String> naturalLanguageKeywords = [
+      // 中文关键词
       '化妆', '美妆', '护肤', '女装', '男装', '服装', '时尚', '餐厅', '美食', 
       '咖啡', '书店', '阅读', '珠宝', '首饰', '运动', '健身', '数码', '电子',
       '儿童', '玩具', '奢侈', '家居', '超市', '电影', '银行',
+      // 场景词汇
       '工作', '安静', '学习', '约会', '购物', '休闲', '吃饭', '买礼物', '娱乐', '取钱',
       '可以', '哪里', '想要', '需要', '推荐', '找', '买', '去',
+      // 英文关键词
       'beauty', 'cosmetic', 'fashion', 'restaurant', 'coffee', 'cafe', 'book',
       'jewelry', 'sport', 'digital', 'luxury', 'home', 'cinema', 'bank'
     ];
     
+    // 如果查询包含自然语言关键词，则不是店铺名称查询
     for (String keyword in naturalLanguageKeywords) {
       if (lowerQuery.contains(keyword)) {
         return false;
       }
     }
     
+    // 检查是否为纯品牌名称（通常较短且不包含描述性词汇）
     if (lowerQuery.length <= 10 && !lowerQuery.contains(' ')) {
       return true;
     }
     
+    // 默认认为是店铺名称查询
     return true;
   }
 
-  // 显示提示消息
+  // 显示提示信息
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.black87,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.black54,
       ),
     );
   }
 
   // 搜索结果
-  Widget _buildSearchResults() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-              ),
-            )
-          else if (searchResults.isEmpty)
-            const Center(
+Widget _buildSearchResults() {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 添加头部状态显示
+        Row(
+          children: [
+            Expanded(
               child: Text(
-                '没有找到相关店铺',
-                style: TextStyle(
+                isLoading ? '正在搜索...' : '搜索结果 (${searchResults.length})',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  fontSize: 16,
                 ),
               ),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
-                itemCount: searchResults.length,
-                itemBuilder: (context, index) {
-                  final store = searchResults[index];
-                  final nearestArea = WalkableAreaData.findNearestWalkableArea(store.id);
-                  
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withOpacity(0.2),
-                          Colors.white.withOpacity(0.1),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // 优化：使用三元运算符而不是 if-else，减少 widget 重建
+        Expanded(
+          child: isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                )
+              : searchResults.isEmpty
+                  ? const Center(
+                      child: Text(
+                        '没有找到相关店铺',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          leading: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 22, 179, 247).withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                                BoxShadow(
-                                  color: const Color.fromARGB(255, 22, 179, 247).withOpacity(0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 2),
-                                ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: searchResults.length,
+                      itemBuilder: (context, index) {
+                        final store = searchResults[index];
+                        final nearestArea = WalkableAreaData.findNearestWalkableArea(store.id);
+                        
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.2),
+                                Colors.white.withOpacity(0.1),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.store,
-                              color: Colors.white,
-                              size: 20,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
                             ),
-                          ),
-                          title: Text(
-                            store.name,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 2),
-                              Text(
-                                '${store.floor}楼 · 编号: ${store.id}',
-                                style: const TextStyle(
-                                  color: Color.fromARGB(203, 255, 255, 255),
-                                  fontSize: 11,
-                                ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
-                              if (store.type2.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(255, 0, 157, 255).withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      store.type2,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9,
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                leading: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 22, 179, 247).withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.15),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                              if (nearestArea != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.location_on,
-                                        size: 11,
-                                        color: Colors.greenAccent.withOpacity(0.8),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Expanded(
-                                        child: Text(
-                                          '可行走区域: $nearestArea',
-                                          style: TextStyle(
-                                            color: Colors.greenAccent.withOpacity(0.8),
-                                            fontSize: 10,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                      BoxShadow(
+                                        color: const Color.fromARGB(255, 22, 179, 247).withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
+                                  child: const Icon(
+                                    Icons.store,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
-                            ],
-                          ),
-                          trailing: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 0, 170, 255).withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
+                                title: Text(
+                                  store.name,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                                BoxShadow(
-                                  color: const Color.fromARGB(255, 0, 170, 255).withOpacity(0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 2),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${store.floor}楼 · 编号: ${store.id}',
+                                      style: const TextStyle(
+                                        color: Color.fromARGB(203, 255, 255, 255),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    if (store.type2.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(255, 0, 157, 255).withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            store.type2,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 9,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (nearestArea != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.location_on,
+                                              size: 11,
+                                              color: Colors.greenAccent.withOpacity(0.8),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Expanded(
+                                              child: Text(
+                                                '可行走区域: $nearestArea',
+                                                style: TextStyle(
+                                                  color: Colors.greenAccent.withOpacity(0.8),
+                                                  fontSize: 10,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          ),
-                          onTap: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePage(
-                                  targetStore: store,
-                                  targetFloor: store.floor,
+                                trailing: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 0, 170, 255).withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.15),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                      BoxShadow(
+                                        color: const Color.fromARGB(255, 0, 170, 255).withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
                                 ),
+                                onTap: () {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HomePage(
+                                        targetStore: store,
+                                        targetFloor: store.floor,
+                                      ),
+                                    ),
+                                    (route) => false,
+                                  );
+                                },
                               ),
-                              (route) => false,
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // 搜索历史
   Widget _buildSearchHistory() {
@@ -559,6 +519,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           const SizedBox(height: 16),
           
+          // 历史记录标签
           if (searchHistory.isNotEmpty)
             Wrap(
               spacing: 8,
@@ -574,69 +535,45 @@ class _SearchPageState extends State<SearchPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(15),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withOpacity(0.25),
-                          Colors.white.withOpacity(0.15),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 14,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            item,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              searchHistory.remove(item);
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.white.withOpacity(0.7),
+                              size: 12,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.history,
-                              size: 14,
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                item,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  searchHistory.remove(item);
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                child: Icon(
-                                  Icons.close,
-                                  color: Colors.white.withOpacity(0.7),
-                                  size: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 );

@@ -5,7 +5,7 @@ import 'store.dart';
 /// DeepSeek API智能搜索服务
 class AISearchService {
   // ==================== DeepSeek API 配置 ====================
-  static const String apiKey = 'sk-674e1d6a046f4d0ea465a21317a7f77e';  // ⚠️ 请替换为你的真实DeepSeek API密钥
+  static const String apiKey = 'sk-674e1d6a046f4d0ea465a21317a7f77e';  
   static const String apiEndpoint = 'https://api.deepseek.com/v1/chat/completions';
   static const String model = 'deepseek-chat';
   
